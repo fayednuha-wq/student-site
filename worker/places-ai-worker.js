@@ -6,7 +6,7 @@
  * their last practice choice, never their name or test answers.
  */
 const ORIGIN = "https://fayednuha-wq.github.io";
-const MODEL = "gemini-2.5-flash-lite";
+const MODEL = "gemini-3.1-flash-lite";
 const LESSONS = {
   venice: "Venice, Italy: Grand Canal, gondolas, buildings, predicting video content from visuals, identifying the main idea and relevant supporting details, distinguishing observation from inference.",
   homes: "Unusual homes: compare rock/cave homes of Cappadocia in Turkey, homes on stilts and bridge-area homes. Vocabulary: ancient, cave, bridge, rock, stilts. Predict from photos, distinguish main ideas and listening details, compare advantages/disadvantages.",
@@ -86,7 +86,8 @@ export default {
        generationConfig:{temperature:0.25,maxOutputTokens:650}
      })});
      if(!response.ok){
-       return reply({error:response.status===429?"Free AI quota exceeded; please retry later":"AI service temporarily unavailable"},response.status===429?429:502,ORIGIN);
+       const code=response.status;const reason=code===429?"Free AI request limit reached":code===404?"Google model unavailable to this new project (check Worker model ID)":code===400?"Gemini rejected the request format":code===401||code===403?"Google API key permission or access denied":"Gemini service returned HTTP "+code;
+       return reply({error:reason},code===429?429:502,ORIGIN);
      }
      const data=await response.json();
      const answer=(data.candidates?.[0]?.content?.parts||[]).map(p=>p.text||"").join("").trim();
