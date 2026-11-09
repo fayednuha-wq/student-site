@@ -36,3 +36,13 @@ After the diagnostic assessment, select **My progress dashboard**. The learner c
 
 ## Free deployment
 Create a new **public** GitHub repository named `student-site`. Upload `index.html`, `styles.css`, `app.js`, `README.md` and the `assets` folder into the repository root. In Settings → Pages, select **Deploy from a branch**, `main`, `/ (root)`. Public URL will usually be `https://fayednuha-wq.github.io/student-site/` after GitHub Pages activates. Do not upload student records or private API keys to this public repository.
+
+## Bilingual Unit 1 study helper (added 2026-11-09)
+
+- Floating in-page help panel with Arabic and English explanations grounded in the project's original curriculum notes for the eight Places modules.
+- Free and browser-only; uses keyword/topic matching rather than a cloud language model. **This is not generative AI and cannot accurately answer arbitrary questions.**
+- Locked until the diagnostic test is finished, and locked again during the post-test to avoid influencing measurement.
+- Links practice mistakes to the option to request additional explanation.
+- No API keys or paid subscriptions. No messages are transmitted to an AI provider.
+
+To publish: open repository Settings > Pages, select Deploy from a branch > main > /(root) and save. A repository that contains files is not necessarily already deployed as a Pages website.
