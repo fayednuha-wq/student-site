@@ -46,3 +46,15 @@ Create a new **public** GitHub repository named `student-site`. Upload `index.ht
 - No API keys or paid subscriptions. No messages are transmitted to an AI provider.
 
 To publish: open repository Settings > Pages, select Deploy from a branch > main > /(root) and save. A repository that contains files is not necessarily already deployed as a Pages website.
+
+
+## Real generative AI tutor (optional)
+The student site now supports an **actual bilingual generative AI tutor** when you deploy the secure backend. The public repository intentionally contains **no API secrets**.
+
+- `worker/places-ai-worker.js`: Cloudflare Worker proxy for Gemini Flash-Lite, with unit-scoped educational instructions and no personally identifying student data from the UI.
+- `ai-config.js`: blank public configuration until the Worker URL is set.
+- `worker/SETUP.md`: complete free-tier deployment steps.
+- `assistant.js`: uses the AI only if the URL is configured, otherwise continues to use the limited bilingual rule-based helper. Pre/post assessment help stays locked.
+- **Current repo status:** AI endpoint is **not configured**, so deployment of code alone does not turn on real AI.
+
+Do not enable billing, share your Gemini API key or submit real student records. The API provider's free tier may use supplied chat content for service improvement.
