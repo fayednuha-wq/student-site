@@ -5,7 +5,7 @@ The website continues to work with the free rule-based helper until you activate
 ## 1. Create a Gemini API key (free-tier eligible account)
 
 1. Visit https://aistudio.google.com/apikey and create your own API key.
-2. Check your active free-tier model availability and limits. The Worker currently uses `gemini-2.5-flash-lite`.
+2. Check your active free-tier model availability and limits. The Worker currently uses `gemini-3.1-flash-lite`.
 3. **Never paste the API key in GitHub, the browser, the student webpage or a chat conversation.**
 
 Google says some free-tier requests and responses may be used to improve its products. Do not send real student names, private grades, credentials, or confidential textbook files.
@@ -55,3 +55,9 @@ References:
 - https://ai.google.dev/gemini-api/terms
 - https://developers.cloudflare.com/workers/platform/limits/
 - https://developers.cloudflare.com/workers/configuration/secrets/
+
+## Troubleshooting (November 2026)
+- Google restricts Gemini 2.5 legacy models for new API projects. The Worker now uses `gemini-3.1-flash-lite`. **If you previously pasted the older Worker code into Cloudflare, reopen Edit code, change the MODEL line, and Deploy again.** A GitHub code change does not automatically update manually deployed Workers.
+- The website has a **New demo** button. It clears browser-only diagnostic and progress data after confirmation, so the initial diagnostic appears again. Export important results first.
+- The student assistant includes **Test AI / فحص AI** after completion of the diagnostic. It reports live errors instead of silently assuming that a configured endpoint is working.
+- If the student site displays old assistant text, refresh with `Ctrl+Shift+R` or use a private window; all scripts now use versioned URLs.
