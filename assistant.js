@@ -19,9 +19,20 @@ const root=document.createElement("div");root.id="places-helper";root.innerHTML=
 document.body.append(root);
 const el=id=>document.getElementById(id);
 function post(role,value,language=lang){const p=document.createElement("p");p.className="ph-msg "+role;p.dir=language==="ar"?"rtl":"ltr";p.textContent=value;el("ph-messages").append(p);el("ph-messages").scrollTop=el("ph-messages").scrollHeight}
-function update(){el("ph-heading").textContent=t("مساعد وحدة Places","Places Learning Helper");el("ph-open-text").textContent=t("مساعد الدرس","Lesson help");el("ph-lang").textContent=t("EN","عربي");el("ph-send").textContent=t("إرسال","Send");el("ph-input").placeholder=t("اكتب سؤالك عن الوحدة...","Ask about the unit...");el("ph-disclaimer").textContent=t("مساعد مبرمج داخل المنهج، وليس ذكاءً اصطناعيًا توليديًا.","Rule-based curriculum guide — not generative AI.");const isLocked=locked();el("ph-input").disabled=isLocked;el("ph-send").disabled=isLocked;el("ph-lock").textContent=isLocked?t("المساعد مقفل أثناء الاختبارين القبلي والبعدي؛ لحماية صدق القياس.","Help is locked during pre- and post-tests to keep scores valid."):t("مجاني ولا يرسل رسائلك إلى أي خادم.","Free; messages are not sent to a server.");el("ph-shortcuts").innerHTML=unit.slice(0,7).map(x=>'<button type="button" data-topic="'+x.id+'" '+(isLocked?'disabled':'')+'>'+({venice:"Venice",homes:"Homes",pronunciation:"Sounds",grammar:"Past simple",vancouver:"Vancouver",critical:"Critical thinking",speaking:"Speaking"}[x.id])+"</button>").join("")}
+function update(){el("ph-heading").textContent=t("مساعد وحدة Places","Places Learning Helper");el("ph-open-text").textContent=t("مساعد الدرس","Lesson help");el("ph-lang").textContent=t("EN","عربي");el("ph-send").textContent=t("إرسال","Send");el("ph-input").placeholder=t("اكتب سؤالك عن الوحدة...","Ask about the unit...");el("ph-disclaimer").textContent=t("مساعد مبرمج داخل المنهج، وليس ذكاءً اصطناعيًا توليديًا.","Rule-based curriculum guide — not generative AI.");const isLocked=locked();el("ph-input").disabled=isLocked;el("ph-send").disabled=isLocked;el("ph-lock").textContent=isLocked?t("المساعد مقفل أثناء الاختبارين القبلي والبعدي؛ لحماية صدق القياس.","Help is locked during pre- and post-tests to keep scores valid."):t("مجاني ولا يرسل رسائلك إلى أي خادم.","Free; messages are not sent to a server.");el("ph-shortcuts").innerHTML=(ctx().practice&&!isLocked?'<button type="button" data-compare="1">'+t("اشرح إجابتي","Explain my answer")+'</button>':"")+unit.slice(0,7).map(x=>'<button type="button" data-topic="'+x.id+'" '+(isLocked?'disabled':'')+'>'+({venice:"Venice",homes:"Homes",pronunciation:"Sounds",grammar:"Past simple",vancouver:"Vancouver",critical:"Critical thinking",speaking:"Speaking"}[x.id])+"</button>").join("")}
+
+function comparisonExplanation(){
+ const p=ctx().practice;
+ if(!p)return t("عشان أشرح الفرق بدقة، حاولي اختيار إجابة في النشاط أولًا، وبعدها اسأليني عن الفرق بين إجابتك والصحيحة.","Choose an answer in the practice activity first, then ask me to compare your answer with the correct one.");
+ if(p.isCorrect)return t("إجابتك صحيحة ✅\nالسؤال: "+p.question+"\nالإجابة: "+p.chosen+"\nالسبب: "+p.correctWhy,"Your answer is correct ✅\nQuestion: "+p.question+"\nAnswer: "+p.chosen+"\nWhy: "+p.correctWhy);
+ return t("السؤال: "+p.question+"\n❌ اختيارك: "+p.chosen+"\nلماذا هذا الاختيار غير صحيح؟ "+p.chosenWhy+"\n✅ الاختيار الصحيح: "+p.correct+"\nلماذا هو صحيح؟ "+p.correctWhy+"\n💡 قاعدة تساعدك: "+p.hint,
+ "Question: "+p.question+"\n❌ Your choice: "+p.chosen+"\nWhy it is wrong: "+p.chosenWhy+"\n✅ Correct choice: "+p.correct+"\nWhy it is right: "+p.correctWhy+"\n💡 Helpful rule: "+p.hint);
+}
+function wantsComparison(q){
+ return /(فرق|الفرق|ليش|ليه|لماذا|سبب|غلط|خطا|صح|صحيح|اجابتي|جوابي|الاختيار|الحل)/.test(q)&&/(فرق|غلط|خطا|صح|صحيح|اجاب|اختيار|الحل|ليش|ليه|لماذا|سبب)/.test(q)||/(why.*wrong|why.*right|correct.*wrong|difference.*answer|explain.*answer|my.*answer)/i.test(q);
+}
 function respond(raw){if(locked())return t("بعد الاختبار أقدر أشرح كل مهارات الوحدة، لكن ما أعطي تلميحات أثناء التقييم.","I can explain the unit after your test, but I cannot give assessment hints.");
- const q=normalize(raw);let best=null,top=0;
+ const q=normalize(raw);if(wantsComparison(q))return comparisonExplanation();let best=null,top=0;
  for(const item of unit){let count=item.terms.split(" ").reduce((n,word)=>n+(word.length>2&&q.includes(normalize(word))?1:0),0);if(count>top){top=count;best=item}}
  if(best)return best[lang];
  if(/مساعدة|ساعد|اشرح|help|explain|understand|مافهم/.test(q)){let current=unit.find(x=>x.id===ctx().lessonId)||unit[0];return current[lang]}
@@ -31,8 +42,8 @@ el("ph-open").onclick=()=>{el("ph-panel").hidden=!el("ph-panel").hidden;el("ph-o
 el("ph-close").onclick=()=>{el("ph-panel").hidden=true;el("ph-open").setAttribute("aria-expanded","false")};
 el("ph-lang").onclick=()=>{lang=lang==="ar"?"en":"ar";update();post("bot",t("تم تغيير اللغة إلى العربية. ما سؤالك؟","Switched to English. What do you want to learn?"))};
 el("ph-form").onsubmit=e=>{e.preventDefault();if(locked())return;let q=el("ph-input").value.trim();if(!q)return;post("user",q);post("bot",respond(q));el("ph-input").value=""};
-el("ph-shortcuts").onclick=e=>{let id=e.target.closest("[data-topic]")?.dataset.topic;if(!id||locked())return;const x=unit.find(y=>y.id===id);post("user",x.id);post("bot",x[lang])};
+el("ph-shortcuts").onclick=e=>{if(e.target.closest("[data-compare]")){if(!locked())post("bot",comparisonExplanation());return}let id=e.target.closest("[data-topic]")?.dataset.topic;if(!id||locked())return;const x=unit.find(y=>y.id===id);post("user",x.id);post("bot",x[lang])};
 window.addEventListener("places:render",update);
-window.addEventListener("places:practice-error",e=>{if(locked())return;el("ph-open").title=t("تحتاج شرحًا إضافيًا؟ افتح مساعد الدرس.","Need another explanation? Open lesson help.");el("ph-open").classList.add("ph-attention")});
+window.addEventListener("places:practice-error",e=>{if(locked())return;update();el("ph-open").title=t("تحتاج شرحًا إضافيًا؟ افتح مساعد الدرس.","Need another explanation? Open lesson help.");el("ph-open").classList.add("ph-attention")});
 update();post("bot",t("أهلًا! أشرح مفردات وحدة Places ومهارات الاستماع والنطق والقواعد والتفكير الناقد والتحدث. اختَر موضوعًا أو اكتب سؤالك.","Hello! I explain Unit 1 Places vocabulary, listening, pronunciation, grammar, critical thinking and speaking. Choose a topic or type a question."));
 })();
