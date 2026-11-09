@@ -25,7 +25,7 @@ Open `index.html` in Chrome or Edge. Or publish the folder contents at a GitHub 
 
 ## Deployment
 1. Create a **new repository** for the student site, separate from the teacher site.
-2. Upload `index.html`, `styles.css`, `app.js`, `README.md`, and `assets/uj-logo.jpg`.
+2. Upload `index.html`, `styles.css`, `app.js`, `README.md`, and `assets/uj-logo.png`.
 3. GitHub Settings → Pages → Deploy from a branch → main / root.
 4. Wait for the GitHub Pages URL to become available.
 
