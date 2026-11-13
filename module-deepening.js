@@ -73,7 +73,7 @@ function addGrammar(){
  '<h3>Sentence-order challenge</h3><p>Select the words in the correct order. Tap a selected word to undo it.</p>'+
  '<p data-grammar-task></p><div class="places-token-options" data-grammar-words></div>'+
  '<div class="places-arranged" aria-live="polite" data-grammar-arranged></div>'+
- '<div class="places-controls"><button type="button" class="btn" data-grammar-check>Check my order</button><button type="button" class="btn secondary" data-grammar-undo>Undo</button><button type="button" class="btn secondary" data-grammar-next>Next sentence</button></div>'+
+ '<div class="places-controls"><button type="button" class="btn" data-grammar-check>Check my order</button><button type="button" class="btn secondary" data-grammar-undo>Undo</button><button type="button" class="btn secondary" data-grammar-next>Next sentence</button><button type="button" class="btn secondary" data-grammar-ask>💬 Explain with AI / اشرح لي الترتيب</button></div>'+
  '<p data-grammar-feedback role="status"></p>';
  panel.insertBefore(sec,original[2]);
  let level=0,selected=[];
@@ -90,7 +90,13 @@ function addGrammar(){
  $("[data-grammar-next]",sec).onclick=()=>{level=(level+1)%drills.length;clear()};
  $("[data-grammar-check]",sec).onclick=()=>{
   const x=drills[level],answer=selected.map(i=>x.tokens[i]);
-  $("[data-grammar-feedback]",sec).textContent=answer.join(" ")===x.answer.join(" ")?"✓ Excellent! The order is correct.":x.hint+" Try a different order; do not copy the example.";
+  $("[data-grammar-feedback]",sec).textContent=answer.join(" ")===x.answer.join(" ")?"✓ Excellent! The order is correct. / ممتاز! ترتيبك صحيح: الفاعل والفعل وبقية الجملة في مواضعها المناسبة.":x.hint+" Try a different order. / حاول مرة أخرى. إذا كانت جملة خبرية ابدأ بالفاعل ثم فعل الماضي، وإذا كان سؤالًا ابدأ بـ Did ثم الفاعل والفعل الأساسي، وإذا كان نفيًا استخدم did not ثم الفعل الأساسي.";
+ };
+ $("[data-grammar-ask]",sec).onclick=()=>{
+  const item=drills[level],attempt=selected.map(i=>item.tokens[i]).join(" ");
+  const question="Help me understand the past-simple word-order exercise in Module 4. Task: "+item.title+". Word tiles: "+item.tokens.join(" | ")+". My current order: "+(attempt||"I have not arranged them yet")+". Explain in simple Arabic and English how to decide word order and why, with a brief hint and example. This is lesson practice, not the diagnostic or post-test.";
+  if(window.PLACES_ASK_TUTOR)window.PLACES_ASK_TUTOR(question);
+  else $( "[data-grammar-feedback]",sec).textContent="اسأل المساعد بعد انتهاء التشخيص، وابدأ بالفاعل في الجملة أو Did في السؤال.";
  };
  clear();
 }
