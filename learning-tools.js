@@ -81,9 +81,16 @@ const LISTENING_AR={
  grammar:["أي فعل في المقطع جاء بصيغة الماضي البسيط؟","ماذا رأى المتحدث أثناء زيارته أمس؟"],
  critical:["أي معلومة ترتبط مباشرة بموضوع الأنشطة في الحديقة؟","أي معلومة لا علاقة لها بأنشطة الحديقة؟"]
 };
+const LISTENING_REASON_AR={
+ venice:"ذكر المقطع أن التنقل في البندقية يتم عبر القنوات باستخدام القوارب.",
+ homes:"ذكر المتحدث أن بعض المنازل حُفرت في الصخور اللينة.",
+ pronunciation:"كلمتا cave وmake تتشاركان صوت العلة /eɪ/.",
+ grammar:"كلمة visited فعل ماضٍ بسيط منتظم؛ أُضيفت -ed إلى visit.",
+ vancouver:"العبارة التي تحتوي على best تعبّر عن رأي شخصي وليس حقيقة يمكن إثباتها.",
+ critical:"المشي وركوب الدراجة يرتبطان مباشرة بالأنشطة داخل الحديقة."
+};
 function questionListeningTools(section,id,p){
- const prompts=[{title:p.question,choices:'[data-listen-option]',text:LISTENING_AR[id]?.[0]},
-                {title:DETAIL_CHECKS[id].q,choices:'[data-detail-option]',text:LISTENING_AR[id]?.[1]}];
+ const prompts=[{title:p.question,choices:'[data-listen-option]',text:LISTENING_AR[id]?.[0]}];
  for(let j=0;j<prompts.length;j++){
   const item=prompts[j];
   const heading=$all("h3",section).find(x=>x.textContent.trim()===item.title);
@@ -112,9 +119,7 @@ function listeningLab(id){
  '<div class="places-controls"><button type="button" data-play class="btn">▶ Play listening</button><button type="button" data-stop class="btn secondary">■ Stop</button></div>'+
  '<p class="places-note" data-voice-note>Browser speech synthesis: accent quality depends on installed voices.</p>'+
  '<h3>'+esc(p.question)+'</h3><div class="places-choice-group">'+p.answers.map((a,i)=>'<button type="button" class="choice" data-listen-option="'+i+'">'+esc(a)+'</button>').join("")+'</div>'+
- '<p data-answer-note aria-live="polite"></p><h3>Second listen · Detail check</h3><p class="places-note">Listen again and focus on one supporting detail / استمع مرة ثانية للتفاصيل.</p>'+
- '<h3>'+esc(DETAIL_CHECKS[id].q)+'</h3><div class="places-choice-group">'+DETAIL_CHECKS[id].options.map((a,i)=>'<button type="button" class="choice" data-detail-option="'+i+'">'+esc(a)+'</button>').join("")+'</div>'+
- '<p data-detail-note aria-live="polite"></p><button type="button" data-transcript class="btn secondary">Show transcript after both answers / عرض النص</button><p class="places-transcript" data-transcript-text hidden>'+esc(p.text)+'</p>'+
+ '<p data-answer-note aria-live="polite" class="places-bilingual-feedback"></p><button type="button" data-transcript class="btn secondary">Show transcript after answering / عرض النص بعد الإجابة</button><p class="places-transcript" data-transcript-text hidden>'+esc(p.text)+'</p>'+
  '<p class="places-note">Original practice passage, adapted to Unit 1 themes. Not the publisher’s textbook audio.</p>';
  questionListeningTools(section,id,p);
  const voiceStatus=$("[data-voice-note]",section);
@@ -126,10 +131,15 @@ function listeningLab(id){
  };
  $("[data-play]",section).onclick=play;
  $("[data-stop]",section).onclick=()=>window.speechSynthesis?.cancel();
- let answered=false,detailAnswered=false;
- $all("[data-listen-option]",section).forEach(b=>{b.onclick=()=>{answered=true;const chosen=Number(b.dataset.listenOption);$("[data-answer-note]",section).textContent=(chosen===p.correct?"✓ Correct! ":"Try again. ")+(chosen===p.correct?p.why:"Listen once more and focus on the main idea.");}});
- $all("[data-detail-option]",section).forEach(b=>{b.onclick=()=>{detailAnswered=true;const d=DETAIL_CHECKS[id],chosen=Number(b.dataset.detailOption);$("[data-detail-note]",section).textContent=(chosen===d.a?"✓ Correct! ":"Try again. ")+(chosen===d.a?d.why:"Replay the listening and focus on one specific detail.");}});
- $("[data-transcript]",section).onclick=()=>{if(!answered||!detailAnswered){$("[data-detail-note]",section).textContent="Answer both listening checks before viewing the transcript.";return}const z=$("[data-transcript-text]",section);z.hidden=!z.hidden};
+ let answered=false;
+ $all("[data-listen-option]",section).forEach(b=>{b.onclick=()=>{
+  answered=true;const chosen=Number(b.dataset.listenOption),correct=chosen===p.correct;
+  $all("[data-listen-option]",section).forEach(x=>{x.classList.remove("correct","wrong");if(Number(x.dataset.listenOption)===p.correct)x.classList.add("correct");else if(x===b)x.classList.add("wrong")});
+  const fb=$("[data-answer-note]",section);
+  fb.innerHTML='<p lang="en" dir="ltr"><strong>'+(correct?'✓ Correct.':'✗ Incorrect.')+'</strong> Answer: '+esc(p.answers[p.correct])+'. '+esc(p.why)+'</p>'+
+   '<p lang="ar" dir="rtl"><strong>'+(correct?'✅ إجابتك صحيحة.':'❌ إجابتك غير صحيحة.')+'</strong> الإجابة الصحيحة: '+esc(p.answers[p.correct])+'. '+esc(LISTENING_REASON_AR[id]||"أعد الاستماع وركّز على المعلومة المرتبطة بالسؤال.")+'</p>';
+ }});
+ $("[data-transcript]",section).onclick=()=>{if(!answered){$("[data-answer-note]",section).textContent="Answer first to reveal the transcript. / أجب عن السؤال أولاً قبل عرض النص.";return}const z=$("[data-transcript-text]",section);z.hidden=!z.hidden};
  return section;
 }
 const starters={
