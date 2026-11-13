@@ -24,11 +24,17 @@ async function prepPhoto(file){
  if(!window.PLACES_AI_ENDPOINT){post("bot","Image support requires an active Gemini connection.");return}
  if(!confirm("This photo will be sent to Google Gemini through Cloudflare for educational explanation. Avoid faces, names, grades, or private information. Continue?"))return;
  try{
-   const bitmap=await createImageBitmap(file);
-   const max=1150,scale=Math.min(1,max/Math.max(bitmap.width,bitmap.height));
-   const canvas=document.createElement("canvas");canvas.width=Math.max(1,Math.round(bitmap.width*scale));canvas.height=Math.max(1,Math.round(bitmap.height*scale));
-   canvas.getContext("2d").drawImage(bitmap,0,0,canvas.width,canvas.height);
-   bitmap.close?.();
+   let img,release=()=>{};
+   if(typeof createImageBitmap==="function"){img=await createImageBitmap(file);release=()=>img.close?.()}
+   else{
+     const localURL=URL.createObjectURL(file);
+     img=await new Promise((resolve,reject)=>{const picture=new Image();picture.onload=()=>resolve(picture);picture.onerror=()=>reject(new Error("Invalid photo"));picture.src=localURL});
+     release=()=>URL.revokeObjectURL(localURL);
+   }
+   const max=1150,scale=Math.min(1,max/Math.max(img.width,img.height));
+   const canvas=document.createElement("canvas");canvas.width=Math.max(1,Math.round(img.width*scale));canvas.height=Math.max(1,Math.round(img.height*scale));
+   canvas.getContext("2d").drawImage(img,0,0,canvas.width,canvas.height);
+   release();
    const dataURL=canvas.toDataURL("image/jpeg",0.72);
    pendingPhoto={mimeType:"image/jpeg",data:dataURL.split(",")[1]};
    el("ph-image-label").textContent="📷 "+file.name.slice(0,45)+" · "+Math.round(dataURL.length/1024)+" KB";
