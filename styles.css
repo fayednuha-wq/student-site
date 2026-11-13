@@ -87,3 +87,33 @@
 .places-speed-label{display:inline-flex;gap:8px;align-items:center;font-size:13px;font-weight:700}
 .places-speed-label select{border:1px solid var(--line);background:var(--paper);color:var(--ink);padding:7px;border-radius:9px;min-height:43px}
 @media(max-width:680px){.places-definitions,.places-rulegrid{grid-template-columns:1fr}.places-vocab-check .choices{grid-template-columns:1fr}}
+
+/* Nov-14 bilingual pedagogy: accessible IPA, Arabic task guidance and oral shadowing */
+.places-bilingual-guide{border:1px solid var(--line);background:var(--bg);padding:clamp(14px,2.6vw,22px);border-radius:16px;margin:22px 0}
+.places-bilingual-guide h2{font-size:21px;margin:3px 8px 6px 0}
+.places-bilingual-guide p[lang=ar],.places-concept-note p[lang=ar]{line-height:1.9;font-size:15px}
+.places-bilingual-guide .places-concept-note{border:1px solid var(--line);border-radius:12px;padding:14px;background:var(--paper)}
+.places-ar-guide{background:rgba(16,130,174,.08);padding:13px;border-radius:9px}
+.places-ipa{margin:16px 0 0}
+.places-ipa-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:12px 0}
+.places-ipa-card{border:1px solid var(--line);background:var(--paper);padding:15px;border-radius:12px}
+.places-ipa-card strong{font-size:25px;letter-spacing:.02em}
+.places-ipa-card p{margin:9px 0}
+.places-ipa-card button{padding:8px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink)}
+.places-feedback-ar{background:rgba(16,130,174,.08);border-radius:8px;padding:10px;margin-top:8px}
+.places-listening-instructions{background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:13px;margin:12px 0}
+.places-listening-instructions p[lang=ar]{font-size:15px;line-height:1.8;margin:0 0 6px}
+.places-listening-instructions .btn{min-height:42px}
+.places-concept-note{background:var(--bg);border:1px solid var(--line);border-radius:11px;padding:14px;margin:13px 0}
+.places-concept-note strong{display:block;margin-top:8px}
+.places-concept-note p{margin:7px 0}
+[data-write-feedback]{white-space:pre-line;line-height:1.9;font-size:14px;background:var(--bg);padding:10px;border-radius:9px}
+.places-oral-sequencing{border:1px solid var(--line);border-radius:16px;background:var(--bg);padding:20px;margin:20px 0}
+.places-oral-sequencing h2{font-size:22px}
+.places-oral-sequencing .places-token-options{background:var(--paper)}
+.places-oral-sequencing .places-arranged{background:var(--paper)}
+.places-oral-sequencing [data-oral-ordered] .places-token{text-align:start;line-height:1.8}
+.places-oral-sequencing [data-oral-ordered] small{display:block;opacity:.8}
+.places-oral-sequencing [data-oral-status]{font-weight:700;white-space:pre-line;min-height:30px}
+.places-oral-sequencing select{padding:7px;border:1px solid var(--line);border-radius:8px;background:var(--paper);color:var(--ink)}
+@media(max-width:680px){.places-ipa-grid{grid-template-columns:1fr}.places-oral-sequencing{padding:13px}.places-oral-sequencing [data-oral-cards] .places-token{width:100%;text-align:start}.places-bilingual-guide .places-controls .btn,.places-listening-instructions .btn{flex:1;min-width:150px}}
