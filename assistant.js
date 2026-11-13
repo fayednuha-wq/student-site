@@ -78,6 +78,10 @@ async function answerQuestion(raw){
 }
 function platformHelp(raw){
  const q=normalize(raw);
+ // Curriculum explanations must reach Gemini, not be mistaken for a site-navigation FAQ.
+ const educational=/(ترتيب الكلمات|ترتيب الجملة|ترتيب جمله|القاعده|القاعدة|ليش|لماذا|غلط|خطا|تصحيح|الحل|حلي|did\b|past.simple|word.order|word tiles|my current order|why is|explain the difference|correct my)/i.test(q);
+ const navigation=/(كيف (افتح|اوصل|اصل|ادخل|اشغل|استخدم|اتنقل)|وين (الاقي|احصل|اجد)|navigate the site|use the website|how do i open|where is the button)/i.test(q);
+ if(educational&&!navigation)return null;
  const asks=/(كيف|ايش|وش|المفروض|طريقه|طريقة|اشرح|شرح|خطوات|وين|فين|استعمل|استخدم|اتعامل|تعامل|تنقل|ابدا|ابدأ|مطلوب|help|how|where|use|navigate|platform|website|site)/i.test(q);
  const topic=/(موقع|منصه|منصة|درس|دروس|موديول|وحده|وحدة|اختبار|مساعد|عرض|تسجيل|سرعه|سرعة|استماع|محادثه|محادثة|كتابه|كتابة|سؤال|خيار|خيارات|مايك|ميكروفون|website|site|platform|test|lesson|module|record|speech|writing|listen|question)/i.test(q);
  if(!asks||!topic)return null;
@@ -154,11 +158,18 @@ function wantsComparison(q){
  return /(فرق|الفرق|ليش|ليه|لماذا|سبب|غلط|خطا|صح|صحيح|اجابتي|جوابي|الاختيار|الحل)/.test(q)&&/(فرق|غلط|خطا|صح|صحيح|اجاب|اختيار|الحل|ليش|ليه|لماذا|سبب)/.test(q)||/(why.*wrong|why.*right|correct.*wrong|difference.*answer|explain.*answer|my.*answer)/i.test(q);
 }
 function respond(raw){if(locked())return t("بعد الاختبار أقدر أشرح كل مهارات الوحدة، لكن ما أعطي تلميحات أثناء التقييم.","I can explain the unit after your test, but I cannot give assessment hints.");
- const q=normalize(raw);if(wantsComparison(q))return comparisonExplanation();let best=null,top=0;
+ const q=normalize(raw);
+ if(/(ترتيب|past.simple|word.order|word tiles|did\b|الماضي البسيط|فعل الماضي)/i.test(q)){
+  return t("في جملة الماضي البسيط: الفاعل + فعل الماضي + بقية الجملة؛ مثال: We visited the bridge. أما السؤال: Did + الفاعل + الفعل الأساسي + بقية السؤال؟ مثل: Did you visit the bridge? لا نكتب visited بعد Did. وللنفي: We did not visit the bridge. إذا كنت ترتب بطاقات الكلمات، ابدأ بالفاعل في الجملة وبـ Did في السؤال ثم تابع. هذا شرح محلي؛ لشرح كل ترتيب بالتفصيل نحتاج اتصال Gemini.","In a past statement use subject + past verb + rest: We visited the bridge. In a question use Did + subject + base verb: Did you visit the bridge? Never use visited after Did. Negative: We did not visit the bridge. For word tiles, begin with the subject in statements or Did in questions. This is a local explanation; detailed feedback on a custom answer requires Gemini.");
+ }
+ if(/(fact|opinion|رأي|حقيقة|الفرق بين الراي)/i.test(q)){
+  return t("الحقيقة Fact معلومة يمكن التحقق منها بدليل مثل Vancouver is in Canada. والرأي Opinion حكم شخصي مثل Vancouver is the most beautiful city. حتى لو لم تكتب I think فقد تكون الجملة رأيًا.","A fact is verifiable, such as Vancouver is in Canada. An opinion is a personal judgement, such as Vancouver is the most beautiful city. An opinion need not start with I think.");
+ }
+ if(wantsComparison(q))return comparisonExplanation();let best=null,top=0;
  for(const item of unit){let count=item.terms.split(" ").reduce((n,word)=>n+(word.length>2&&q.includes(normalize(word))?1:0),0);if(count>top){top=count;best=item}}
  if(best)return best[lang];
  if(/مساعدة|ساعد|اشرح|help|explain|understand|مافهم/.test(q)){let current=unit.find(x=>x.id===ctx().lessonId)||unit[0];return current[lang]}
- return t("هذا السؤال خارج الشروحات الموثوقة المتاحة حاليًا. اسألني عن البندقية أو المنازل غير المعتادة أو النطق أو الماضي البسيط أو فانكوفر أو التحدث.","I do not have a verified answer for that question. Try Venice, unusual homes, pronunciation, past simple, Vancouver, or speaking.");
+ return t("هذا مساعد محلي محدود إذا لم تتصل خدمة Gemini. سؤالك ليس بالضرورة خارج المنهج؛ عند اتصال Gemini أقدر أشرح أمثلة جديدة وأسئلة أوسع. حاول صياغة السؤال مع مثال أو استخدم فحص AI للتأكد من الاتصال.","The local offline fallback has limited explanations; your question is not necessarily outside the course. With Gemini connected, I can help with new examples and broader language-learning questions. Try including an example or run Test AI.");
 }
 window.PLACES_ASK_TUTOR=(question)=>{
  if(locked())return false;
