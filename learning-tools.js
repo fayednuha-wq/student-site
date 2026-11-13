@@ -34,7 +34,12 @@ critical:{q:"Which detail is unrelated to park activities?",options:["The price 
 let prefs={accent:"en-US",rate:1};
 let voiceNote="";
 const available=()=>typeof speechSynthesis!=="undefined"?speechSynthesis.getVoices():[];
-const voiced=(accent)=>available().find(v=>v.lang.toLowerCase()===accent.toLowerCase())||null;
+const voiced=(accent)=>{
+ const a=available().filter(v=>v.lang.toLowerCase()===accent.toLowerCase());
+ // Voice gender is NOT exposed by the Web Speech API; try commonly feminine-labelled voices when available.
+ const names=/female|samantha|victoria|karen|moira|serena|susan|zira|aria|jenny|sonia|emily|ava|allison|kate|salli|amy|joanna|nicole|olivia/i;
+ return a.find(v=>names.test(v.name))||a[0]||null;
+};
 function say(text,accent=prefs.accent,rate=prefs.rate){
  if(!("speechSynthesis" in window)){alert("Speech playback is unavailable in this browser.");return false}
  speechSynthesis.cancel();
@@ -49,11 +54,11 @@ function say(text,accent=prefs.accent,rate=prefs.rate){
 function speechToolbar(text,isExam=false){
  const wrapper=document.createElement("div");
  wrapper.className="places-access-tools";
- const q=document.createElement("button");q.type="button";q.className="btn secondary";q.textContent="🔊 Listen / استمع للسؤال";q.onclick=()=>say(text,"en-US",0.92);
- const opt=document.createElement("button");opt.type="button";opt.className="btn secondary";opt.textContent="🔊 Read options / استمع للخيارات";opt.onclick=()=>{const opts=$all(isExam?"[data-answer]":"[data-option]");say(opts.map((e,i)=>(i+1)+". "+e.textContent.trim()).join(". "),"en-US",0.88)};
+ const q=document.createElement("button");q.type="button";q.className="btn secondary";q.textContent="🔊 Listen / استمع للسؤال";q.onclick=()=>say(text,"en-US",contexts().lessonId==="final"?0.69:0.80);
+ const opt=document.createElement("button");opt.type="button";opt.className="btn secondary";opt.textContent="🔊 Read options / استمع للخيارات";opt.onclick=()=>{const choices=$all(isExam?"[data-answer]":"[data-option]");const letters=["A","B","C","D","E","F"];say(choices.map((e,i)=>"Option "+letters[i]+". "+e.textContent.trim()+".").join(" ... "),"en-US",contexts().lessonId==="final"?0.68:0.80)};
  const ar=document.createElement("button");ar.type="button";ar.className="btn secondary";ar.textContent="🇸🇦 التعليمات بالعربية";ar.onclick=()=>{const note=$(".places-ar-directions",wrapper.parentElement);if(note)note.hidden=!note.hidden};
  const readAr=document.createElement("button");readAr.type="button";readAr.className="btn secondary";readAr.textContent="🔊 اسمع المطلوب بالعربي";readAr.onclick=()=>{const note=$(".places-ar-directions",wrapper.parentElement);if(note)say(note.textContent,"ar-SA",0.95)};
- wrapper.append(q,opt,ar,readAr);return wrapper;
+ wrapper.append(q,opt,ar);if(contexts().lessonId!=="final"||isExam)wrapper.append(readAr);return wrapper;
 }
 function addQuestionAccess(){
  const c=contexts();if(c.stage!=="pre"&&c.stage!=="post"&&c.stage!=="lesson")return;
@@ -110,15 +115,24 @@ function speakStudio(){
  const field=(name,label,placeholder)=>
  '<label class="places-writing-field"><span>'+esc(label)+'</span><textarea data-stage="'+name+'" rows="2" placeholder="'+esc(placeholder)+'">'+esc(saved["final-"+name]||"")+'</textarea></label>';
  sec.innerHTML='<h2>🎤 Guided Speaking & Presentation Studio</h2>'+
- '<p lang="ar" dir="rtl">بدل المقال الطويل: كوّن عرضًا قصيرًا بأربع خطوات، ثم استمع للنموذج وسجّل صوتك وراجعه.</p>'+
- '<p class="muted">Choose any interesting place (Venice, Cappadocia, or Vancouver). Each box needs just one short sentence.</p>'+
- field("intro","1 · Introduce the place","Today I will talk about Venice.")+
- field("fact","2 · Add a verifiable fact","Venice has many canals.")+
- field("opinion","3 · Share your opinion","In my opinion, Venice is interesting.")+
- field("end","4 · Conclude","Thank you for listening.")+
- '<div class="places-controls"><button class="btn" type="button" data-builder-listen>🔊 Listen to my presentation</button>'+
+ '<p lang="ar" dir="rtl">بدل المقال الطويل: كوّن عرضًا قصيرًا بخمس خطوات، ثم استمع للنموذج وسجّل صوتك وراجعه.</p>'+
+ '<p class="muted">Choose any interesting place (Venice, Cappadocia, or Vancouver). The five book-aligned parts each need one or two short sentences. You can listen slowly.</p>'+
+ '<div class="places-presentation-guide"><h3>Parts of an oral presentation | أجزاء العرض</h3><dl>'+
+ '<dt>Introduction</dt><dd>The opening that tells listeners what place you will talk about and where it is.</dd>'+
+ '<dt>Facts</dt><dd>Information people can check, such as its location, history, or special features.</dd>'+
+ '<dt>Positive opinion</dt><dd>A good point about the place, with your reason. Say: In my opinion…</dd>'+
+ '<dt>Negative opinion</dt><dd>A possible drawback or problem, supported by a reason. Say: However…</dd>'+
+ '<dt>Conclusion</dt><dd>The final part that sums up your thoughts or recommends the place. Say: Finally…</dd>'+
+ '</dl></div>'+
+ 
+ field("intro","1 · Introduction & general facts — name and locate your place.","Today I will talk about Venice. It is in Italy.")+
+ field("fact","2 · Facts — information that can be checked in a reliable source.","Venice has many canals and bridges.")+
+ field("opinion","3 · Positive opinion — a good point and the reason you like it.","In my opinion, Venice is beautiful because of the canals.")+
+ field("negative","4 · Negative opinion — one disadvantage with a reason.","However, I think Venice can be crowded because many people visit.")+
+ field("end","5 · Conclusion — summarize your view or recommend the place.","To conclude, I recommend visiting Venice. Thank you for listening.")+
+ '<div class="places-controls"><label class="places-speed-label">Playback speed <select data-presentation-speed><option value=".62">Extra slow 0.62×</option><option value=".72" selected>Slow 0.72×</option><option value=".85">Steady 0.85×</option><option value="1">Normal 1×</option></select></label><button class="btn" type="button" data-builder-listen>🔊 Listen to my presentation</button>'+
  '<button class="btn secondary" type="button" data-builder-check>✓ Check structure</button></div>'+
- '<p class="places-note" data-builder-feedback role="status">Write one short sentence in each box; perfect grammar is not required in the first draft.</p>'+
+ '<p class="places-note" data-builder-feedback role="status">Build five parts: introduction, facts, positive opinion, negative opinion, and conclusion. Speak at your own speed.</p>'+
  '<div class="places-controls"><button type="button" class="btn" data-record>● Start recording</button>'+
  '<button type="button" class="btn secondary" data-stop-record disabled>■ Stop</button>'+
  '<span data-record-status>Microphone not started</span></div>'+
@@ -127,15 +141,15 @@ function speakStudio(){
  '<fieldset class="places-rubric"><legend>Self-check / التقييم الذاتي</legend>'+
  '<label><input type="checkbox"> I introduced the place clearly</label>'+
  '<label><input type="checkbox"> I gave at least one verifiable fact</label>'+
- '<label><input type="checkbox"> I shared an opinion using a signpost</label>'+
+ '<label><input type="checkbox"> I shared positive and negative opinions with reasons</label>'+
  '<label><input type="checkbox"> I concluded and spoke clearly</label></fieldset>';
  $all("[data-stage]",sec).forEach(t=>t.oninput=()=>saveDraft("final-"+t.dataset.stage,t.value));
  const getLines=()=>$all("[data-stage]",sec).map(t=>t.value.trim()).filter(Boolean);
- $("[data-builder-listen]",sec).onclick=()=>{const txt=getLines().join(" ");if(!txt){$("[data-builder-feedback]",sec).textContent="Write at least one sentence first.";return}say(txt,"en-US",.88)};
+ $("[data-builder-listen]",sec).onclick=()=>{const txt=getLines().join(". ");if(!txt){$("[data-builder-feedback]",sec).textContent="Write at least one sentence first.";return}say(txt,"en-US",Number($("[data-presentation-speed]",sec).value))};
  $("[data-builder-check]",sec).onclick=()=>{
  const fields=$all("[data-stage]",sec),filled=fields.filter(t=>t.value.trim()).length;
  const missing=fields.filter(t=>!t.value.trim()).map(t=>t.dataset.stage);
- $("[data-builder-feedback]",sec).textContent=filled===4?"✓ Your 4-part structure is ready. Rehearse aloud and record your presentation.":"You completed "+filled+"/4 steps. Add: "+missing.join(", ")+".";
+ $("[data-builder-feedback]",sec).textContent=filled===5?"✓ Your 5-part structure is ready. Rehearse aloud and record your presentation.":"You completed "+filled+"/5 steps. Add: "+missing.join(", ")+".";
  };
  const recBtn=$("[data-record]",sec),stopBtn=$("[data-stop-record]",sec),status=$("[data-record-status]",sec);
  recBtn.onclick=async()=>{
