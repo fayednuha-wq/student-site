@@ -179,8 +179,12 @@ function onLessonRender(){
 }
 window.addEventListener("places:render",onLessonRender);
 onLessonRender();
-window.addEventListener("beforeunload",()=>{
+function clearAudio(){
  stopRecording();stopPlayback();
- for(const x of Object.values(labs)){Object.values(x.parts).forEach(drop);drop(x.full)}
-});
+ for(const x of Object.values(labs)){
+  Object.values(x.parts).forEach(drop);drop(x.full);x.parts={};x.full=null;
+ }
+}
+window.PLACES_AUDIO_RESET=clearAudio;
+window.addEventListener("beforeunload",clearAudio);
 })();
