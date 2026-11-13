@@ -91,3 +91,18 @@ The student app now incorporates teacher feedback from the first user trial:
 **Deployment reminder:** all front-end changes flow from this GitHub repository to GitHub Pages. But Cloudflare Worker source is deployed manually. The new worker prompt about how to use the website will apply to live Gemini only after copying the latest `worker/places-ai-worker.js` into the already-created Cloudflare Worker and choosing Deploy. Do not reveal or change `GEMINI_API_KEY`.
 
 **Educational testing caveat:** Listening samples are original supplemental passages read by browser TTS (not the publisher's licensed recordings); separate pre/post tests have distinct items but are not established equivalent/validated standardized forms. The speaking studio provides recording/self-check, not valid automatic speaking proficiency scores.
+
+
+## Bilingual lesson support and oral rehearsal (2026-11-14, second revision)
+
+- All eight student lesson pages now have an English instructional explanation and an Arabic teaching explanation, with show/hide Arabic and buttons to hear both languages.
+- Module 3 has a focused explanation of how phonemic **vowel** symbols between `/ /` represent sounds rather than spellings; listening examples cover book sounds `/eɪ/`, `/ɒ/` (British), `/ɪ/` and `/ʌ/`, with a warning that American accents may pronounce `hot` differently.
+- Formative listening labs (including Modules 4 and 5) now display question-specific Arabic directions and buttons to hear the English question, all English options, and Arabic directions. These audio questions are supplementary original practice, not licensed publisher recordings.
+- Writing self-check feedback is bilingual and explicitly highlights sentence count, initial capitalization, punctuation, and simple grammar or fact/opinion checks. It cannot validate all grammar or factual truth. Modules 5 and 6 have bilingual fact-vs-opinion definitions.
+- All eight original mastery checks provide short Arabic feedback for each selected answer and hints after errors.
+- Module 7 no longer has a long writing exercise or a second presentation-writing studio. Instead students must order five example presentation sentences and can practise **listen — pause — repeat** with a student-selected 3-, 5-, or 7-second silent gap between each sentence. This is oral rehearsal, not automatic speaking assessment.
+- Module 8 gives both English **and Arabic** descriptions of each of the five presentation parts. The phrase 'بدل المقال الطويل' was removed from student-site code.
+- The Module 4 sentence-ordering activity has a direct AI explanation button that includes the tiles and the learner's attempted sequence. Curriculum questions pass to Gemini rather than being misclassified as basic site navigation; if Gemini is unavailable, a limited on-device past-simple explanation is shown instead of misleading 'outside scope'.
+- The Gemini Worker source permits broader English-learning questions, giving book-based explanations first and **explicitly identifying additional material outside the book** rather than refusing to teach it.
+
+**Only student GitHub Pages automatically picks up the changed front-end assets. For the Gemini tutor's updated prompt to take effect, the owner must once again copy the latest `worker/places-ai-worker.js` to the existing Cloudflare Worker and press Deploy. Do not change or paste the secret `GEMINI_API_KEY`.** Browsers can differ in voices, speech recognition, recording support and text-to-speech callback timing; the pause/repeat interaction needs an actual device test.
