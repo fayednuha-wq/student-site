@@ -57,3 +57,33 @@
 .ph-say{display:inline-flex;margin-inline-start:6px;padding:2px 6px;color:var(--ink);background:transparent;border:1px solid var(--line);border-radius:8px;font-size:13px}
 .ph-attach #ph-mic{cursor:pointer;border-radius:9px;background:var(--bg);border:1px solid var(--line);color:var(--ink);font-weight:700;padding:7px 9px}
 .ph-attach #ph-mic:focus-visible,.ph-say:focus-visible{outline:3px solid #f7b84b}
+
+/* Book-aligned module sections, vocabulary, presentation and word-order practice */
+.places-skill-section{border-inline-start:5px solid #097dab;border-radius:12px;background:var(--bg);padding:16px 19px;margin:22px 0 13px}
+.places-skill-section h2{font-size:23px;margin:0 0 10px;color:var(--ink)}
+.places-skill-section p{font-size:14px;margin:8px 0}
+.places-definitions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:15px 0 22px}
+.places-definition{padding:14px;background:var(--paper);border:1px solid var(--line);border-radius:12px}
+.places-definition strong{font-size:17px;text-transform:lowercase;color:var(--ink)}
+.places-definition small{margin-inline-start:7px;color:var(--muted);font-size:12px}
+.places-definition p{font-size:14px;margin:9px 0}
+.places-definition button{border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:8px;padding:6px 10px;font-size:12px}
+.places-vocab-check{border:1px solid var(--line);border-radius:13px;padding:15px;background:var(--paper)}
+.places-vocab-check .choices{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.places-rulegrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:17px 0}
+.places-rule{background:var(--paper);border:1px solid var(--line);border-radius:13px;padding:15px}
+.places-rule h3{margin:0 0 7px;font-size:17px}
+.places-rule p{font-size:13px;margin:7px 0}
+.places-rule small{font-size:12px;color:var(--muted)}
+.places-rule .places-example{background:var(--bg);padding:10px;border-radius:8px;font-weight:700}
+.places-token-options,.places-arranged{display:flex;gap:9px;flex-wrap:wrap;margin:14px 0;min-height:62px;padding:11px;border-radius:12px;border:1px dashed var(--line)}
+.places-token{background:var(--paper);border:1px solid #39829d;padding:8px 13px;border-radius:9px;color:var(--ink);font-weight:700}
+.places-token.selected{background:#e6f5fa;color:#123e51}
+.places-token:disabled{opacity:.25;cursor:not-allowed}
+.places-arranged{background:var(--paper)}
+.places-presentation-guide{padding:17px;margin:14px 0;background:var(--paper);border:1px solid var(--line);border-radius:13px}
+.places-presentation-guide dt{font-weight:800;color:var(--ink);margin-top:12px}
+.places-presentation-guide dd{font-size:14px;color:var(--muted);margin:3px 0 10px}
+.places-speed-label{display:inline-flex;gap:8px;align-items:center;font-size:13px;font-weight:700}
+.places-speed-label select{border:1px solid var(--line);background:var(--paper);color:var(--ink);padding:7px;border-radius:9px;min-height:43px}
+@media(max-width:680px){.places-definitions,.places-rulegrid{grid-template-columns:1fr}.places-vocab-check .choices{grid-template-columns:1fr}}
