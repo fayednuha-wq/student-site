@@ -74,15 +74,29 @@ function addGuide(id){
  const learn=$$(".task",panel).find(x=>x.textContent.includes("Learn")&&x.querySelector("#speakLesson"));
  if(!learn||!guide[id])return;
  const g=guide[id],section=document.createElement("section");section.className="places-bilingual-guide task";
- section.innerHTML='<div class="places-controls"><h2>'+esc(g.title)+'</h2><button type="button" class="btn secondary" data-toggle-ar aria-expanded="true">إخفاء الشرح بالعربية / Hide Arabic</button></div>'+
- '<div class="places-concept-note"><p lang="en">'+esc(g.en)+'</p><p dir="rtl" lang="ar" class="places-ar-guide">'+esc(g.ar)+'</p><p><strong>Example:</strong> '+esc(g.example)+'</p></div>'+
+ section.innerHTML='<div class="places-controls"><h2 lang="en" dir="ltr">'+esc(g.title.split(" / ")[0])+'</h2><button type="button" class="btn secondary" data-toggle-ar aria-expanded="true">إخفاء الشرح بالعربية / Hide Arabic</button></div>'+
+ '<p class="places-title-ar" lang="ar" dir="rtl">'+esc(g.title.split(" / ")[1]||"الشرح بالعربية")+'</p>'+
+ '<div class="places-concept-note"><p lang="en" dir="ltr">'+esc(g.en)+'</p><p dir="rtl" lang="ar" class="places-ar-guide">'+esc(g.ar)+'</p><p lang="en" dir="ltr"><strong>Example:</strong> '+esc(g.example)+'</p></div>'+
  '<div class="places-controls"><button type="button" class="btn secondary" data-read-en>🔊 Listen to English explanation</button><button type="button" class="btn secondary" data-read-ar>🔊 اسمع الشرح بالعربية</button></div>';
- learn.insertAdjacentElement("afterend",section);
+ const intro=panel.querySelector("h1 + p");
+ if(intro)intro.insertAdjacentElement("afterend",section);
+ else learn.insertAdjacentElement("afterend",section);
  const ar=$(".places-ar-guide",section);
+ const titleAr=$(".places-title-ar",section);
  const toggle=$("[data-toggle-ar]",section);
- toggle.onclick=()=>{ar.hidden=!ar.hidden;toggle.setAttribute("aria-expanded",String(!ar.hidden));toggle.textContent=ar.hidden?"عرض الشرح بالعربية / Show Arabic":"إخفاء الشرح بالعربية / Hide Arabic"};
+ toggle.onclick=()=>{
+  ar.hidden=!ar.hidden;titleAr.hidden=ar.hidden;
+  toggle.setAttribute("aria-expanded",String(!ar.hidden));
+  toggle.textContent=ar.hidden?"عرض الشرح بالعربية / Show Arabic":"إخفاء الشرح بالعربية / Hide Arabic";
+ };
  $("[data-read-en]",section).onclick=()=>say(g.en,.77);
  $("[data-read-ar]",section).onclick=()=>say(g.ar,.87,"ar-SA");
+ if((id==="speaking"||id==="final")&&intro){
+  const introAr=id==="speaking"?"في هذا الدرس تتعلم كيف تنظّم العرض الشفهي، ثم تستمع وتردد وتسجل كل جزء.":"في هذا الدرس تحضّر عرضًا من خمسة أجزاء، وتستطيع تسجيل كل جزء بمفرده ثم تجربة العرض كاملًا.";
+  const introBox=document.createElement("p");introBox.lang="ar";introBox.dir="rtl";introBox.className="places-intro-ar";introBox.textContent=introAr;
+  intro.insertAdjacentElement("afterend",introBox);
+  toggle.addEventListener("click",()=>{introBox.hidden=ar.hidden});
+ }
  if(id==="pronunciation")addIPA(section);
 }
 function addIPA(parent){
