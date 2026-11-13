@@ -172,11 +172,13 @@ function mount(lesson){
  $("[data-stop-play]",root).onclick=()=>{stopPlayback();message($("[data-play-status]",root),"Playback stopped.","تم إيقاف التشغيل.");};
  $("[data-assess-audio]",root).onclick=()=>feedback(lesson,root);
 }
-window.addEventListener("places:render",()=>{
+function onLessonRender(){
  if(active)stopRecording();stopPlayback();
  const c=window.PLACES_CONTEXT?.();
  if(c?.stage==="lesson"&&["speaking","final"].includes(c.lessonId))mount(c.lessonId);
-});
+}
+window.addEventListener("places:render",onLessonRender);
+onLessonRender();
 window.addEventListener("beforeunload",()=>{
  stopRecording();stopPlayback();
  for(const x of Object.values(labs)){Object.values(x.parts).forEach(drop);drop(x.full)}
