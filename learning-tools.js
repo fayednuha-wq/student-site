@@ -204,6 +204,14 @@ function run(){
  const c=contexts();
  if(c.stage==="pre"||c.stage==="post"||c.stage==="lesson"){addQuestionAccess();if(c.stage==="lesson")enrichLesson()}
 }
+window.addEventListener("places:render",()=>{
+ const c=contexts();
+ if(c.stage!=="lesson"||!["speaking","final"].includes(c.lessonId)){
+   if(recorder?.state==="recording"){try{recorder.stop()}catch{}}
+   stream?.getTracks().forEach(track=>track.stop());
+   stream=null;
+ }
+});
 window.addEventListener("places:render",run);
 window.addEventListener("pageshow",run);
 run();
