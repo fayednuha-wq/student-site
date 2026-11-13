@@ -53,3 +53,7 @@
 #ph-image-label{max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 #ph-ai-status{display:block;padding:4px 12px;color:var(--muted);font-size:11px}
 @media(max-width:700px){.places-access-tools .btn{flex:1;min-width:165px}.places-controls select{max-width:100%}}
+
+.ph-say{display:inline-flex;margin-inline-start:6px;padding:2px 6px;color:var(--ink);background:transparent;border:1px solid var(--line);border-radius:8px;font-size:13px}
+.ph-attach #ph-mic{cursor:pointer;border-radius:9px;background:var(--bg);border:1px solid var(--line);color:var(--ink);font-weight:700;padding:7px 9px}
+.ph-attach #ph-mic:focus-visible,.ph-say:focus-visible{outline:3px solid #f7b84b}
