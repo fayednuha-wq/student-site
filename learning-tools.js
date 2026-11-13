@@ -44,7 +44,8 @@ function speechToolbar(text,isExam=false){
  const q=document.createElement("button");q.type="button";q.className="btn secondary";q.textContent="🔊 Listen / استمع للسؤال";q.onclick=()=>say(text,"en-US",0.92);
  const opt=document.createElement("button");opt.type="button";opt.className="btn secondary";opt.textContent="🔊 Read options / استمع للخيارات";opt.onclick=()=>{const opts=$all(isExam?"[data-answer]":"[data-option]");say(opts.map((e,i)=>(i+1)+". "+e.textContent.trim()).join(". "),"en-US",0.88)};
  const ar=document.createElement("button");ar.type="button";ar.className="btn secondary";ar.textContent="🇸🇦 التعليمات بالعربية";ar.onclick=()=>{const note=$(".places-ar-directions",wrapper.parentElement);if(note)note.hidden=!note.hidden};
- wrapper.append(q,opt,ar);return wrapper;
+ const readAr=document.createElement("button");readAr.type="button";readAr.className="btn secondary";readAr.textContent="🔊 اسمع المطلوب بالعربي";readAr.onclick=()=>{const note=$(".places-ar-directions",wrapper.parentElement);if(note)say(note.textContent,"ar-SA",0.95)};
+ wrapper.append(q,opt,ar,readAr);return wrapper;
 }
 function addQuestionAccess(){
  const c=contexts();if(c.stage!=="pre"&&c.stage!=="post"&&c.stage!=="lesson")return;
