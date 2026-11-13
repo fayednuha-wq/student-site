@@ -159,12 +159,17 @@ function writingLab(id){
  '<p lang="ar" dir="rtl">ابدأ بجملتين أو ثلاث، ثم راجع وضوح الفكرة واستخدام المفردات. ليست كتابة مقال طويل.</p>'+
  '<button type="button" class="btn secondary" data-example>Show example / مثال</button><p class="places-note" data-example-text hidden>'+esc(example)+'</p>'+
  '<label class="places-writing-field">My writing <textarea data-writing rows="4" placeholder="Write your short answer here...">'+esc(saved["writing-"+id]||"")+'</textarea></label>'+
- '<div class="places-controls"><button type="button" class="btn" data-write-review>✓ Self-check</button><button type="button" class="btn secondary" data-read-writing>🔊 Listen to what I wrote</button></div>'+
+ '<div class="places-controls"><button type="button" class="btn" data-write-review>✓ Self-check</button><button type="button" class="btn secondary" data-read-writing>🔊 Listen to what I wrote</button><button type="button" class="btn secondary" data-ai-feedback>💬 Ask AI for writing feedback</button></div>'+
  '<p role="status" class="places-note" data-write-feedback></p>'+
  '<p class="places-note">This is formative practice with a self-check, not automatic scoring of writing quality.</p>';
  const w=$("[data-writing]",sec);w.oninput=()=>saveDraft("writing-"+id,w.value);
  $("[data-example]",sec).onclick=()=>{$("[data-example-text]",sec).hidden=!$("[data-example-text]",sec).hidden};
  $("[data-read-writing]",sec).onclick=()=>{if(w.value.trim())say(w.value)};
+ $("[data-ai-feedback]",sec).onclick=()=>{
+  const draft=w.value.trim();if(draft.length<15){$("[data-write-feedback]",sec).textContent="Write at least two short sentences before requesting detailed feedback.";return}
+  if(!window.PLACES_ASK_TUTOR){$("[data-write-feedback]",sec).textContent="The AI helper is not available. Use the self-check instead.";return}
+  window.PLACES_ASK_TUTOR("Please review my short English writing about a place. Show 2 things I did well, up to 2 corrected sentences, and one tip to improve. Explain in simple Arabic and English. Here is my draft:\n"+draft.slice(0,450));
+ };
  $("[data-write-review]",sec).onclick=()=>{
   const sentences=w.value.trim().split(/[.!?]+/).map(x=>x.trim()).filter(Boolean);
   const count=w.value.trim().split(/\s+/).filter(Boolean).length;
