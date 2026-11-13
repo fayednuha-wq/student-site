@@ -46,7 +46,7 @@ function setupRecorder(host,lesson,key){
   download.download="places-"+lesson+"-"+key+"."+(v.blob.type.includes("mp4")?"m4a":"webm");
  }
  refresh();
- message(note,saved()?"Recording ready.":"Record, then play back.","التسجيل جاهز."||"","التسجيل جاهز أو ابدأ تسجيلًا جديدًا.");
+ message(note,saved()?"Recording ready.":"Record, then play back.",saved()?"التسجيل السابق جاهز.":"سجّل صوتك ثم استمع إليه.");
  start.onclick=async()=>{
   if(active){message(note,"Stop the other recording first.","أوقف التسجيل الجاري أولًا.");return}
   if(!navigator.mediaDevices?.getUserMedia||typeof MediaRecorder==="undefined"){message(note,"Microphone recording isn't supported.","المتصفح لا يدعم تسجيل الميكروفون.");return}
