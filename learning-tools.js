@@ -23,6 +23,14 @@ pronunciation:{label:"Sounds · Cave and Make",ar:"النطق: استمع لصو
 grammar:{label:"Past Simple · A Visit",ar:"الماضي البسيط: زيارة",text:"Yesterday, I visited Venice. I saw a gondola and walked beside the Grand Canal. Did I visit Venice yesterday? Yes, I did.",question:"Which verb is past simple in the passage?",answers:["Visited","Visit","Visiting"],correct:0,why:"Visited is the regular past-simple form of visit."},
 critical:{label:"Critical Thinking · Relevant Details",ar:"التفكير الناقد: المعلومات المرتبطة",text:"I want to talk about activities in Stanley Park. You can walk and cycle there. These activities are relevant to my topic. The price of a new phone is not relevant.",question:"What is relevant to a talk about activities in the park?",answers:["Walking and cycling","Phone prices","A cooking recipe"],correct:0,why:"Walking and cycling are activities that visitors can do in the park."}
 };
+const DETAIL_CHECKS={
+venice:{q:"Which traditional boat is mentioned?",options:["Gondola","Bus","Bicycle"],a:0,why:"The passage names the gondola as a traditional Venetian boat."},
+homes:{q:"Why can people make rooms in the Cappadocia rock?",options:["The rock is soft enough to shape","The rock is made of glass","The homes are floating"],a:0,why:"The speaker explains that the rock is soft enough to shape."},
+vancouver:{q:"Which two activities are mentioned in Stanley Park?",options:["Walking and cycling","Skiing and surfing","Flying and driving"],a:0,why:"Paths allow visitors to walk and cycle."},
+pronunciation:{q:"Which word has the /ʌ/ vowel sound?",options:["Cup","Cave","Make"],a:0,why:"The word cup contains /ʌ/."},
+grammar:{q:"What did the speaker see yesterday?",options:["A gondola","A skyscraper","A cave"],a:0,why:"The speaker says 'I saw a gondola'."},
+critical:{q:"Which detail is unrelated to park activities?",options:["The price of a new phone","Walking paths","Cycling"],a:0,why:"Phone prices do not help explain park activities."}
+};
 let prefs={accent:"en-US",rate:1};
 let voiceNote="";
 const available=()=>typeof speechSynthesis!=="undefined"?speechSynthesis.getVoices():[];
@@ -70,7 +78,9 @@ function listeningLab(id){
  '<div class="places-controls"><button type="button" data-play class="btn">▶ Play listening</button><button type="button" data-stop class="btn secondary">■ Stop</button></div>'+
  '<p class="places-note" data-voice-note>Browser speech synthesis: accent quality depends on installed voices.</p>'+
  '<h3>'+esc(p.question)+'</h3><div class="places-choice-group">'+p.answers.map((a,i)=>'<button type="button" class="choice" data-listen-option="'+i+'">'+esc(a)+'</button>').join("")+'</div>'+
- '<p data-answer-note aria-live="polite"></p><button type="button" data-transcript class="btn secondary">Show transcript after answering / عرض النص</button><p class="places-transcript" data-transcript-text hidden>'+esc(p.text)+'</p>'+
+ '<p data-answer-note aria-live="polite"></p><h3>Second listen · Detail check</h3><p class="places-note">Listen again and focus on one supporting detail / استمع مرة ثانية للتفاصيل.</p>'+
+ '<h3>'+esc(DETAIL_CHECKS[id].q)+'</h3><div class="places-choice-group">'+DETAIL_CHECKS[id].options.map((a,i)=>'<button type="button" class="choice" data-detail-option="'+i+'">'+esc(a)+'</button>').join("")+'</div>'+
+ '<p data-detail-note aria-live="polite"></p><button type="button" data-transcript class="btn secondary">Show transcript after both answers / عرض النص</button><p class="places-transcript" data-transcript-text hidden>'+esc(p.text)+'</p>'+
  '<p class="places-note">Original practice passage, adapted to Unit 1 themes. Not the publisher’s textbook audio.</p>';
  const voiceStatus=$("[data-voice-note]",section);
  const acc=$("[data-accent]",section),speed=$("[data-rate]",section);
@@ -81,9 +91,10 @@ function listeningLab(id){
  };
  $("[data-play]",section).onclick=play;
  $("[data-stop]",section).onclick=()=>window.speechSynthesis?.cancel();
- let answered=false;
+ let answered=false,detailAnswered=false;
  $all("[data-listen-option]",section).forEach(b=>{b.onclick=()=>{answered=true;const chosen=Number(b.dataset.listenOption);$("[data-answer-note]",section).textContent=(chosen===p.correct?"✓ Correct! ":"Try again. ")+(chosen===p.correct?p.why:"Listen once more and focus on the main idea.");}});
- $("[data-transcript]",section).onclick=()=>{if(!answered){$("[data-answer-note]",section).textContent="Please answer the listening question before viewing the transcript.";return}const z=$("[data-transcript-text]",section);z.hidden=!z.hidden};
+ $all("[data-detail-option]",section).forEach(b=>{b.onclick=()=>{detailAnswered=true;const d=DETAIL_CHECKS[id],chosen=Number(b.dataset.detailOption);$("[data-detail-note]",section).textContent=(chosen===d.a?"✓ Correct! ":"Try again. ")+(chosen===d.a?d.why:"Replay the listening and focus on one specific detail.");}});
+ $("[data-transcript]",section).onclick=()=>{if(!answered||!detailAnswered){$("[data-detail-note]",section).textContent="Answer both listening checks before viewing the transcript.";return}const z=$("[data-transcript-text]",section);z.hidden=!z.hidden};
  return section;
 }
 const starters={
