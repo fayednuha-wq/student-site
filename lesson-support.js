@@ -181,10 +181,12 @@ function presentationOrdering(){
  };
  paint();
 }
-window.addEventListener("places:render",()=>{
+function onLessonRender(){
  oralStop();
  const c=window.PLACES_CONTEXT?.();if(!c||c.stage!=="lesson")return;
  addGuide(c.lessonId);
  if(c.lessonId==="speaking")presentationOrdering();
-});
+}
+window.addEventListener("places:render",onLessonRender);
+onLessonRender();
 })();
