@@ -58,6 +58,12 @@ const rules=[
  ["Past-simple negative","Subject + did not + base verb + object / place","We did not visit the city.","Do not put -ed on the main verb after didn't."],
  ["Be in the past","Subject + was/were + description","The house was ancient.","For past be, use was/were without did."]
 ];
+const RULES_AR=[
+ ["الجملة الخبرية في الماضي البسيط","الفاعل + فعل الماضي + المكان أو المفعول + الوقت","زرت مدينة قديمة الصيف الماضي.","أضف -ed للأفعال المنتظمة بحسب قواعد الكتابة، وبعض الأفعال غير منتظمة مثل go → went وsee → saw."],
+ ["السؤال في الماضي البسيط","Did + الفاعل + الفعل الأساسي + بقية السؤال؟","هل زرت المدينة القديمة الصيف الماضي؟","بعد Did يعود الفعل إلى صورته الأصلية: visit وليس visited."],
+ ["النفي في الماضي البسيط","الفاعل + did not + الفعل الأساسي + بقية الجملة","لم نزُر المدينة.","بعد didn't لا تضع -ed على الفعل الأساسي."],
+ ["فعل be في الماضي","الفاعل + was/were + الوصف","كان المنزل قديمًا.","مع was أو were لا نستخدم did لتكوين الجملة المثبتة."]
+];
 const drills=[
  {title:"Arrange a statement",tokens:["yesterday","the museum","visited","We"],answer:["We","visited","the museum","yesterday"],hint:"Begin with the subject, then past-tense verb, place/object, and time."},
  {title:"Arrange a past question",tokens:["the bridge","last week?","Did","you","visit"],answer:["Did","you","visit","the bridge","last week?"],hint:"Start with Did + subject + base verb, then the rest."},
@@ -69,12 +75,12 @@ function addGrammar(){
  if(original.length<3)return;
  const sec=document.createElement("section");sec.className="task places-grammar-lab";
  sec.innerHTML='<h2>Past simple: build a sentence step by step</h2><p dir="rtl" lang="ar">رتّب عناصر الجملة: الفاعل أولاً، ثم الفعل المناسب، وبعده بقية الجملة. في سؤال الماضي نبدأ بـ Did ثم الفاعل والفعل بصيغته الأساسية.</p>'+
- '<div class="places-rulegrid">'+rules.map(x=>'<article class="places-rule"><h3>'+e(x[0])+'</h3><p><strong>Order:</strong> '+e(x[1])+'</p><p class="places-example">'+e(x[2])+'</p><small>'+e(x[3])+'</small></article>').join("")+'</div>'+
- '<h3>Sentence-order challenge</h3><p>Select the words in the correct order. Tap a selected word to undo it.</p>'+
+ '<div class="places-rulegrid">'+rules.map((x,i)=>'<article class="places-rule"><h3 lang="en" dir="ltr">'+e(x[0])+'</h3><p lang="en" dir="ltr"><strong>Order:</strong> '+e(x[1])+'</p><p lang="ar" dir="rtl"><strong>الترتيب:</strong> '+e(RULES_AR[i][1])+'</p><p class="places-example" lang="en" dir="ltr">'+e(x[2])+'</p><p lang="ar" dir="rtl">'+e(RULES_AR[i][2])+'</p><small lang="en" dir="ltr">'+e(x[3])+'</small><p lang="ar" dir="rtl">'+e(RULES_AR[i][3])+'</p></article>').join("")+'</div>'+
+ '<h3 lang="en" dir="ltr">Sentence-order challenge</h3><h3 lang="ar" dir="rtl">نشاط ترتيب الجمل</h3><p lang="en" dir="ltr">Select the words in the correct order. Tap a selected word to undo it.</p><p lang="ar" dir="rtl">اختر الكلمات بالترتيب الصحيح، واضغط على الكلمة المختارة للتراجع عنها.</p>'+
  '<p data-grammar-task></p><div class="places-token-options" data-grammar-words></div>'+
  '<div class="places-arranged" aria-live="polite" data-grammar-arranged></div>'+
  '<div class="places-controls"><button type="button" class="btn" data-grammar-check>Check my order</button><button type="button" class="btn secondary" data-grammar-undo>Undo</button><button type="button" class="btn secondary" data-grammar-next>Next sentence</button><button type="button" class="btn secondary" data-grammar-ask>💬 Explain with AI / اشرح لي الترتيب</button></div>'+
- '<p data-grammar-feedback role="status"></p>';
+ '<div data-grammar-feedback class="places-bilingual-feedback" role="status"></div>';
  panel.insertBefore(sec,original[2]);
  let level=0,selected=[];
  function paint(){
@@ -90,7 +96,11 @@ function addGrammar(){
  $("[data-grammar-next]",sec).onclick=()=>{level=(level+1)%drills.length;clear()};
  $("[data-grammar-check]",sec).onclick=()=>{
   const x=drills[level],answer=selected.map(i=>x.tokens[i]);
-  $("[data-grammar-feedback]",sec).textContent=answer.join(" ")===x.answer.join(" ")?"✓ Excellent! The order is correct. / ممتاز! ترتيبك صحيح: الفاعل والفعل وبقية الجملة في مواضعها المناسبة.":x.hint+" Try a different order. / حاول مرة أخرى. إذا كانت جملة خبرية ابدأ بالفاعل ثم فعل الماضي، وإذا كان سؤالًا ابدأ بـ Did ثم الفاعل والفعل الأساسي، وإذا كان نفيًا استخدم did not ثم الفعل الأساسي.";
+  const correct=answer.join(" ")===x.answer.join(" ");
+  $("[data-grammar-feedback]",sec).innerHTML='<p lang="en" dir="ltr"><strong>'+(correct?'✅ Correct order.':'❌ Not quite.')+'</strong> '+e(correct?"Your sentence follows the past-simple pattern.":x.hint)+'</p>'+
+   '<p lang="ar" dir="rtl"><strong>'+(correct?'✅ الترتيب صحيح.':'❌ الترتيب غير صحيح.')+'</strong> '+e(correct?"رتبت الكلمات وفق قاعدة الماضي البسيط.":"الجملة: الفاعل ثم فعل الماضي. السؤال: Did ثم الفاعل والفعل الأساسي. النفي: الفاعل ثم did not والفعل الأساسي.")+'</p>'+
+   '<p lang="en" dir="ltr"><strong>Correct order:</strong> '+e(x.answer.join(" "))+'</p>'+
+   '<p lang="ar" dir="rtl">هذا نموذج الإجابة الصحيحة؛ قارن ترتيبك به لتعرف سبب الخطأ.</p>';
  };
  $("[data-grammar-ask]",sec).onclick=()=>{
   const item=drills[level],attempt=selected.map(i=>item.tokens[i]).join(" ");
