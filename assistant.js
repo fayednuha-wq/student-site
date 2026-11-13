@@ -15,7 +15,28 @@ const ctx=()=>window.PLACES_CONTEXT?.()||{stage:"welcome",preComplete:false,less
 const locked=()=>!ctx().preComplete||ctx().stage==="pre"||ctx().stage==="post";
 const aiEndpoint=()=>typeof window.PLACES_AI_ENDPOINT==="string"?window.PLACES_AI_ENDPOINT.trim().replace(/\/+$/,""):"";
 let conversation=[];
+let pendingPhoto=null;
 let sending=false;
+async function prepPhoto(file){
+ if(!file)return;
+ if(!file.type.startsWith("image/")){post("bot","Please choose a photo of the textbook exercise.");return}
+ if(file.size>9000000){post("bot","Choose a photo under 9 MB.");return}
+ if(!window.PLACES_AI_ENDPOINT){post("bot","Image support requires an active Gemini connection.");return}
+ if(!confirm("This photo will be sent to Google Gemini through Cloudflare for educational explanation. Avoid faces, names, grades, or private information. Continue?"))return;
+ try{
+   const bitmap=await createImageBitmap(file);
+   const max=1150,scale=Math.min(1,max/Math.max(bitmap.width,bitmap.height));
+   const canvas=document.createElement("canvas");canvas.width=Math.max(1,Math.round(bitmap.width*scale));canvas.height=Math.max(1,Math.round(bitmap.height*scale));
+   canvas.getContext("2d").drawImage(bitmap,0,0,canvas.width,canvas.height);
+   bitmap.close?.();
+   const dataURL=canvas.toDataURL("image/jpeg",0.72);
+   pendingPhoto={mimeType:"image/jpeg",data:dataURL.split(",")[1]};
+   el("ph-image-label").textContent="📷 "+file.name.slice(0,45)+" · "+Math.round(dataURL.length/1024)+" KB";
+   el("ph-image-label").hidden=false;
+   el("ph-remove-image").hidden=false;
+ }catch(e){post("bot","Could not open the image. Use JPG or PNG and try again.")}
+}
+
 let aiVerified=false,aiError="";
 async function testAIConnection(){
  if(locked()){post("bot",t("اختبار الاتصال يتاح بعد إكمال التشخيص القبلي حتى لا نعرض مساعدًا تعليميًا قبل القياس.","Connection test is available after the diagnostic assessment."));return}
@@ -36,11 +57,14 @@ async function answerQuestion(raw){
  if(!endpoint)return {answer:respond(raw),type:"rules"};
  if(!/^https:\/\//.test(endpoint))throw Error("AI service URL must use HTTPS");
  const c=ctx();
- const response=await fetch(endpoint+"/chat",{
-   method:"POST",headers:{"Content-Type":"application/json"},
+ const ctrl=new AbortController();const timer=setTimeout(()=>ctrl.abort(),23000);
+ let response;
+ try{response=await fetch(endpoint+"/chat",{
+   method:"POST",headers:{"Content-Type":"application/json"},signal:ctrl.signal,
    body:JSON.stringify({question:raw,language:lang,lessonId:c.lessonId,stage:c.stage,
-     preComplete:c.preComplete,practice:c.practice||null,history:conversation.slice(-6)})
- });
+     preComplete:c.preComplete,practice:c.practice||null,history:conversation.slice(-4),image:pendingPhoto})
+ });}catch(e){throw new Error(e.name==="AbortError"?"AI response took too long (23 s). Try a shorter question or retry.":"Network/CORS error reaching Cloudflare Worker.")}
+ finally{clearTimeout(timer)}
  let data;
  try{data=await response.json()}catch{throw Error("AI service returned an invalid response")}
  if(!response.ok||typeof data.answer!=="string"||!data.answer.trim())throw Error(data.error||"AI assistant is temporarily unavailable");
@@ -48,13 +72,15 @@ async function answerQuestion(raw){
 }
 async function sendQuestion(raw){
  if(locked()||sending)return;
- const q=String(raw||"").trim().slice(0,500);if(!q)return;
+ const q=String(raw||"").trim().slice(0,650);if(!q&&!pendingPhoto)return;
  sending=true;el("ph-send").disabled=true;el("ph-input").disabled=true;
- post("user",q);
+ post("user",(q||"اشرح لي هذا التمرين من الصورة")+(pendingPhoto?" 📷 [photo]":""));
+ const wait=document.createElement("p");wait.className="ph-msg bot";wait.textContent=t("يفكّر المساعد…","Thinking…");wait.setAttribute("aria-live","polite");el("ph-messages").append(wait);el("ph-messages").scrollTop=el("ph-messages").scrollHeight;
  try{
    const result=await answerQuestion(q);
    if(!locked()){
      if(result.type==="ai"){aiVerified=true;aiError=""}
+     pendingPhoto=null;el("ph-image-label").hidden=true;el("ph-remove-image").hidden=true;el("ph-photo").value="";
      post("bot",result.answer);
      conversation.push({role:"user",text:q},{role:"assistant",text:result.answer});
      if(conversation.length>6)conversation=conversation.slice(-6);
@@ -62,17 +88,17 @@ async function sendQuestion(raw){
  }catch(err){
    if(!locked()){aiVerified=false;aiError=String(err?.message||err).slice(0,200);post("bot",t("تعذر الاتصال بـ Gemini: ","Gemini connection failed: ")+aiError+"\n"+t("هذه إجابة محدودة من المساعد المبرمج:\n","Limited rule-based fallback:\n")+respond(q))}
  }finally{
-   sending=false;update();
+   wait.remove();sending=false;update();
  }
 }
 
 const t=(ar,en)=>lang==="ar"?ar:en;
 const normalize=s=>s.toLowerCase().normalize("NFKC").replace(/[\u064b-\u065f]/g,"").replace(/[أإآ]/g,"ا").replace(/ى/g,"ي").trim();
-const root=document.createElement("div");root.id="places-helper";root.innerHTML='<button type="button" id="ph-open" aria-controls="ph-panel" aria-expanded="false">💬 <span id="ph-open-text"></span></button><section id="ph-panel" hidden aria-label="Unit 1 Places learning support"><header><strong id="ph-heading"></strong><div><button id="ph-test" type="button" title="Test live AI connection">Test AI</button><button id="ph-lang" type="button" aria-label="Switch language">EN</button><button id="ph-close" type="button" aria-label="Close assistant">✕</button></div></header><small id="ph-disclaimer"></small><small id="ph-ai-status" role="status"></small><div id="ph-messages" role="log" aria-live="polite"></div><div id="ph-shortcuts"></div><form id="ph-form"><input id="ph-input" maxlength="300" aria-label="Question about Places"><button type="submit" id="ph-send">Send</button></form><small id="ph-lock"></small></section>';
+const root=document.createElement("div");root.id="places-helper";root.innerHTML='<button type="button" id="ph-open" aria-controls="ph-panel" aria-expanded="false">💬 <span id="ph-open-text"></span></button><section id="ph-panel" hidden aria-label="Unit 1 Places learning support"><header><strong id="ph-heading"></strong><div><button id="ph-test" type="button" title="Test live AI connection">Test AI</button><button id="ph-lang" type="button" aria-label="Switch language">EN</button><button id="ph-close" type="button" aria-label="Close assistant">✕</button></div></header><small id="ph-disclaimer"></small><small id="ph-ai-status" role="status"></small><div id="ph-messages" role="log" aria-live="polite"></div><div id="ph-shortcuts"></div><div class="ph-attach"><label for="ph-photo">📷 Add textbook photo / صوّر السؤال</label><input id="ph-photo" type="file" accept="image/*"><button type="button" id="ph-remove-image" hidden>✕ Remove</button><small id="ph-image-label" hidden></small></div><form id="ph-form"><input id="ph-input" maxlength="650" aria-label="Question about Places"><button type="submit" id="ph-send">Send</button></form><small id="ph-lock"></small></section>';
 document.body.append(root);
 const el=id=>document.getElementById(id);
 function post(role,value,language=lang){const p=document.createElement("p");p.className="ph-msg "+role;p.dir=language==="ar"?"rtl":"ltr";p.textContent=value;el("ph-messages").append(p);el("ph-messages").scrollTop=el("ph-messages").scrollHeight}
-function update(){el("ph-heading").textContent=t("مساعد وحدة Places","Places Learning Helper");el("ph-open-text").textContent=t("مساعد الدرس","Lesson help");el("ph-lang").textContent=t("EN","عربي");el("ph-send").textContent=t("إرسال","Send");el("ph-input").placeholder=t("اكتب سؤالك عن الوحدة...","Ask about the unit...");el("ph-ai-status").textContent=!aiEndpoint()?t("الحالة: وضع الشرح المبرمج فقط","Status: rule-based mode only"):aiVerified?t("الحالة: Gemini متصل ✅","Status: Gemini responded ✅"):aiError?t("الحالة: تعذر اتصال Gemini — استخدمي فحص الاتصال","Status: Gemini connection failed — run connection test"):t("الحالة: عنوان Gemini محفوظ — الاتصال لم يُتحقق منه بعد","Status: AI address configured — not yet verified");el("ph-test").textContent=t("فحص AI","Test AI");el("ph-test").disabled=locked()||sending;el("ph-disclaimer").textContent=aiEndpoint()?t("مساعد ذكاء اصطناعي تجريبي مبني على محتوى الوحدة. تُرسل أسئلة الدردشة إلى مزوّد النموذج؛ تجنب مشاركة البيانات الشخصية.","Experimental AI tutor grounded in unit notes. Chat messages are sent to the AI provider; do not share personal information."):t("مساعد مبرمج داخل المنهج، وليس ذكاءً اصطناعيًا توليديًا حتى يتم تفعيل خدمة AI.","Rule-based unit guide, not generative AI until the AI service is enabled.");const isLocked=locked();el("ph-input").disabled=isLocked||sending;el("ph-send").disabled=isLocked||sending;el("ph-lock").textContent=isLocked?t("المساعد مقفل أثناء الاختبارين القبلي والبعدي؛ لحماية صدق القياس.","Help is locked during pre- and post-tests to keep scores valid."):aiEndpoint()?t("قد تخطئ إجابات الذكاء الاصطناعي؛ راجع المحتوى عند الشك.","AI responses may contain errors; check against the lesson."):t("مجاني ولا يرسل رسائلك إلى أي خادم.","Free; messages are not sent to a server.");el("ph-shortcuts").innerHTML=(ctx().practice&&!isLocked?'<button type="button" data-compare="1">'+t("اشرح إجابتي","Explain my answer")+'</button>':"")+unit.slice(0,7).map(x=>'<button type="button" data-topic="'+x.id+'" '+(isLocked?'disabled':'')+'>'+({venice:"Venice",homes:"Homes",pronunciation:"Sounds",grammar:"Past simple",vancouver:"Vancouver",critical:"Critical thinking",speaking:"Speaking"}[x.id])+"</button>").join("")}
+function update(){el("ph-heading").textContent=t("مساعد وحدة Places","Places Learning Helper");el("ph-open-text").textContent=t("مساعد الدرس","Lesson help");el("ph-lang").textContent=t("EN","عربي");el("ph-send").textContent=t("إرسال","Send");el("ph-input").placeholder=t("اكتب سؤالك عن الوحدة...","Ask about the unit...");el("ph-ai-status").textContent=!aiEndpoint()?t("الحالة: وضع الشرح المبرمج فقط","Status: rule-based mode only"):aiVerified?t("الحالة: Gemini متصل ✅","Status: Gemini responded ✅"):aiError?t("الحالة: تعذر اتصال Gemini — استخدمي فحص الاتصال","Status: Gemini connection failed — run connection test"):t("الحالة: عنوان Gemini محفوظ — الاتصال لم يُتحقق منه بعد","Status: AI address configured — not yet verified");el("ph-test").textContent=t("فحص AI","Test AI");el("ph-test").disabled=locked()||sending;el("ph-disclaimer").textContent=aiEndpoint()?t("مساعد Gemini مرن لشرح مهارات الإنجليزية وأسئلة الكتاب المصوّرة؛ تُرسل الأسئلة والصور إلى Google. تجنّب البيانات الشخصية.","Flexible Gemini tutor for English skills and textbook photos; questions and photos are sent to Google. Avoid private information."):t("مساعد مبرمج داخل المنهج، وليس ذكاءً اصطناعيًا توليديًا حتى يتم تفعيل خدمة AI.","Rule-based unit guide, not generative AI until the AI service is enabled.");const isLocked=locked();el("ph-input").disabled=isLocked||sending;el("ph-send").disabled=isLocked||sending;el("ph-photo").disabled=isLocked||sending;el("ph-lock").textContent=isLocked?t("المساعد مقفل أثناء الاختبارين القبلي والبعدي؛ لحماية صدق القياس.","Help is locked during pre- and post-tests to keep scores valid."):aiEndpoint()?t("قد تخطئ إجابات الذكاء الاصطناعي؛ راجع المحتوى عند الشك.","AI responses may contain errors; check against the lesson."):t("مجاني ولا يرسل رسائلك إلى أي خادم.","Free; messages are not sent to a server.");el("ph-shortcuts").innerHTML=(ctx().practice&&!isLocked?'<button type="button" data-compare="1">'+t("اشرح إجابتي","Explain my answer")+'</button>':"")+unit.slice(0,7).map(x=>'<button type="button" data-topic="'+x.id+'" '+(isLocked?'disabled':'')+'>'+({venice:"Venice",homes:"Homes",pronunciation:"Sounds",grammar:"Past simple",vancouver:"Vancouver",critical:"Critical thinking",speaking:"Speaking"}[x.id])+"</button>").join("")}
 
 function comparisonExplanation(){
  const p=ctx().practice;
@@ -95,6 +121,8 @@ el("ph-open").onclick=()=>{el("ph-panel").hidden=!el("ph-panel").hidden;el("ph-o
 el("ph-close").onclick=()=>{el("ph-panel").hidden=true;el("ph-open").setAttribute("aria-expanded","false")};
 el("ph-test").onclick=testAIConnection;
 el("ph-lang").onclick=()=>{lang=lang==="ar"?"en":"ar";update();post("bot",t("تم تغيير اللغة إلى العربية. ما سؤالك؟","Switched to English. What do you want to learn?"))};
+el("ph-photo").onchange=e=>{if(!locked())prepPhoto(e.target.files?.[0])};
+el("ph-remove-image").onclick=()=>{pendingPhoto=null;el("ph-photo").value="";el("ph-image-label").hidden=true;el("ph-remove-image").hidden=true};
 el("ph-form").onsubmit=e=>{e.preventDefault();const q=el("ph-input").value.trim();if(!q)return;el("ph-input").value="";sendQuestion(q)};
 el("ph-shortcuts").onclick=e=>{if(e.target.closest("[data-compare]")){if(!locked())sendQuestion(t("اشرح الفرق بين إجابتي والإجابة الصحيحة مع السبب","Explain why my answer differs from the correct choice"));return}let id=e.target.closest("[data-topic]")?.dataset.topic;if(!id||locked())return;const x=unit.find(y=>y.id===id);post("user",x.id);post("bot",x[lang])};
 window.addEventListener("places:render",update);
