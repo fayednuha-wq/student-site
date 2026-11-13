@@ -25,7 +25,7 @@ function addModule2(){
  const one=document.createElement("div");one.className="places-skill-section";
  one.innerHTML='<h2>Part 1 · Key Vocabulary / المفردات الأساسية</h2><p><strong>Skill measured:</strong> Understanding and matching new English words with their definitions in English.</p><p dir="rtl" lang="ar">المهارة: يتعرف الطالب على الكلمات الجديدة ويطابق كل كلمة بتعريفها الإنجليزي، كما يتطلب الكتاب.</p>';
  const two=document.createElement("div");two.className="places-skill-section";
- two.innerHTML='<h2>Part 2 · Listening 1 / مهارة الاستماع</h2><p><strong>Skills measured:</strong> Predicting from visuals, understanding the main idea, and identifying supporting details after repeated listening.</p><p dir="rtl" lang="ar">المهارات: التنبؤ من الصور، تحديد الفكرة العامة، ثم تمييز التفاصيل الداعمة وتدوينها.</p>';
+ two.innerHTML='<h2>Part 2 · Listening 1 / مهارة الاستماع</h2><p><strong>Skills measured:</strong> Listening for the main idea, then locating and checking specific supporting details through repeated listening.</p><p dir="rtl" lang="ar">المهارات: تحديد الفكرة العامة بعد الاستماع، ثم الانتباه إلى التفاصيل الداعمة والتحقق منها بعد إعادة المقطع.</p>';
  vocab.innerHTML='<span class="tag">English definition practice · Unit 1, Listening 1</span>'+
  '<h3>Learn the word AND its English definition</h3>'+
  '<div class="places-definitions">'+words.map(x=>'<article class="places-definition"><strong>'+e(x.w)+'</strong> <small>'+e(x.s)+'</small><p>'+e(x.d)+'</p><button type="button" data-pronounce="'+e(x.w)+'">🔊 Hear word</button></article>').join("")+'</div>'+
