@@ -117,6 +117,12 @@ function respond(raw){if(locked())return t("بعد الاختبار أقدر أ�
  if(/مساعدة|ساعد|اشرح|help|explain|understand|مافهم/.test(q)){let current=unit.find(x=>x.id===ctx().lessonId)||unit[0];return current[lang]}
  return t("هذا السؤال خارج الشروحات الموثوقة المتاحة حاليًا. اسألني عن البندقية أو المنازل غير المعتادة أو النطق أو الماضي البسيط أو فانكوفر أو التحدث.","I do not have a verified answer for that question. Try Venice, unusual homes, pronunciation, past simple, Vancouver, or speaking.");
 }
+window.PLACES_ASK_TUTOR=(question)=>{
+ if(locked())return false;
+ el("ph-panel").hidden=false;el("ph-open").setAttribute("aria-expanded","true");update();
+ sendQuestion(question);
+ return true;
+};
 el("ph-open").onclick=()=>{el("ph-panel").hidden=!el("ph-panel").hidden;el("ph-open").setAttribute("aria-expanded",String(!el("ph-panel").hidden));update()};
 el("ph-close").onclick=()=>{el("ph-panel").hidden=true;el("ph-open").setAttribute("aria-expanded","false")};
 el("ph-test").onclick=testAIConnection;
