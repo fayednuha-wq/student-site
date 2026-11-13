@@ -151,69 +151,46 @@ end:["To conclude,","Thank you for listening."]
 let recorder=null,stream=null,chunks=[],blobURL=null,startStamp=0,stopClock=null;
 const saveDraft=(id,txt)=>{saved[id]=txt;persist()};
 function speakStudio(){
- const sec=document.createElement("section");sec.className="task places-practice-lab";
- const field=(name,label,placeholder)=>
- '<label class="places-writing-field"><span>'+esc(label)+'</span><textarea data-stage="'+name+'" rows="2" placeholder="'+esc(placeholder)+'">'+esc(saved["final-"+name]||"")+'</textarea></label>';
+ const sec=document.createElement("section");sec.className="task places-practice-lab places-speaking-builder";
+ const parts=[
+  {key:"intro",en:"Introduction — name the place and tell us where it is.",ar:"المقدمة — عرّف المكان واذكر موقعه.",placeholder:"Today I will talk about Venice. It is in Italy."},
+  {key:"fact",en:"Facts — share checkable information about the place.",ar:"الحقائق — قدّم معلومات يمكن التحقق منها عن المكان.",placeholder:"Venice has many canals and bridges."},
+  {key:"opinion",en:"Positive opinion — state something good and explain why.",ar:"الرأي الإيجابي — اذكر ميزة في المكان وعلّل إعجابك بها.",placeholder:"In my opinion, Venice is beautiful because of the canals."},
+  {key:"negative",en:"Negative opinion — describe one drawback and why.",ar:"الرأي السلبي — اذكر عيبًا محتملًا مع السبب.",placeholder:"However, Venice can be crowded because many tourists visit."},
+  {key:"end",en:"Conclusion — summarize and give a final recommendation.",ar:"الخاتمة — لخّص أفكارك وقدّم توصية أو رسالة أخيرة.",placeholder:"To conclude, I recommend visiting Venice. Thank you for listening."}
+ ];
  sec.innerHTML='<h2>🎤 Guided Speaking & Presentation Studio</h2>'+
- '<p lang="ar" dir="rtl">تعرّف أولاً على الأجزاء الخمسة للعرض الشفهي، ثم كوّن جملًا قصيرة لكل جزء، واستمع لها بسرعة مناسبة وتدرّب على إلقائها وسجّل صوتك.</p>'+
- '<p class="muted">Choose any interesting place (Venice, Cappadocia, or Vancouver). The five book-aligned parts each need one or two short sentences. You can listen slowly.</p>'+
- '<div class="places-presentation-guide"><h3>Parts of an oral presentation | أجزاء العرض</h3><dl>'+
- '<dt>Introduction</dt><dd>The opening that tells listeners what place you will talk about and where it is.</dd><dd lang="ar" dir="rtl">المقدمة: افتتاح العرض وذكر اسم المكان وموقعه حتى يفهم الجمهور موضوعك.</dd>'+
- '<dt>Facts</dt><dd>Information people can check, such as its location, history, or special features.</dd><dd lang="ar" dir="rtl">الحقائق: معلومات يمكن التحقق منها مثل الموقع والتاريخ والخصائص المميزة.</dd>'+
- '<dt>Positive opinion</dt><dd>A good point about the place, with your reason. Say: In my opinion…</dd><dd lang="ar" dir="rtl">الرأي الإيجابي: شيء يعجبك في المكان مع توضيح السبب. مثل: In my opinion…</dd>'+
- '<dt>Negative opinion</dt><dd>A possible drawback or problem, supported by a reason. Say: However…</dd><dd lang="ar" dir="rtl">الرأي السلبي: مشكلة أو عيب محتمل في المكان مع ذكر السبب. مثل: However…</dd>'+
- '<dt>Conclusion</dt><dd>The final part that sums up your thoughts or recommends the place. Say: Finally…</dd><dd lang="ar" dir="rtl">الخاتمة: تلخيص فكرتك الأساسية أو تقديم توصية أخيرة. مثل: Finally…</dd>'+
- '</dl></div>'+
- 
- field("intro","1 · Introduction & general facts — name and locate your place.","Today I will talk about Venice. It is in Italy.")+
- field("fact","2 · Facts — information that can be checked in a reliable source.","Venice has many canals and bridges.")+
- field("opinion","3 · Positive opinion — a good point and the reason you like it.","In my opinion, Venice is beautiful because of the canals.")+
- field("negative","4 · Negative opinion — one disadvantage with a reason.","However, I think Venice can be crowded because many people visit.")+
- field("end","5 · Conclusion — summarize your view or recommend the place.","To conclude, I recommend visiting Venice. Thank you for listening.")+
- '<div class="places-controls"><label class="places-speed-label">Playback speed <select data-presentation-speed><option value=".62">Extra slow 0.62×</option><option value=".72" selected>Slow 0.72×</option><option value=".85">Steady 0.85×</option><option value="1">Normal 1×</option></select></label><button class="btn" type="button" data-builder-listen>🔊 Listen to my presentation</button>'+
- '<button class="btn secondary" type="button" data-builder-check>✓ Check structure</button></div>'+
- '<p class="places-note" data-builder-feedback role="status">Build five parts: introduction, facts, positive opinion, negative opinion, and conclusion. Speak at your own speed.</p>'+
- '<div class="places-controls"><button type="button" class="btn" data-record>● Start recording</button>'+
- '<button type="button" class="btn secondary" data-stop-record disabled>■ Stop</button>'+
- '<span data-record-status>Microphone not started</span></div>'+
- '<audio controls data-playback hidden></audio><a data-download-audio hidden download="places-speaking-practice.webm">Download my recording</a>'+
- '<p class="places-note">Microphone permission is required. Recordings are played back on your device and are not uploaded or automatically graded. Use the speaking rubric with a teacher.</p>'+
- '<fieldset class="places-rubric"><legend>Self-check / التقييم الذاتي</legend>'+
- '<label><input type="checkbox"> I introduced the place clearly</label>'+
- '<label><input type="checkbox"> I gave at least one verifiable fact</label>'+
- '<label><input type="checkbox"> I shared positive and negative opinions with reasons</label>'+
- '<label><input type="checkbox"> I concluded and spoke clearly</label></fieldset>';
+ '<p lang="en" dir="ltr">Plan five short parts, then listen, practise and record each one. You can also record your complete presentation in the microphone studio.</p>'+
+ '<p lang="ar" dir="rtl">خطط لخمسة أجزاء قصيرة ثم استمع إلى كل جزء، وتدرّب عليه، وسجّل صوتك. يمكنك أيضًا تسجيل العرض كاملًا في استوديو الصوت.</p>'+
+ '<div class="places-presentation-guide"><h3>Presentation parts / أجزاء العرض</h3>'+
+ parts.map((p,i)=>'<div class="places-presentation-part"><strong lang="en" dir="ltr">'+(i+1)+'. '+esc(p.en)+'</strong><p lang="ar" dir="rtl">'+esc(p.ar)+'</p></div>').join("")+'</div>'+
+ '<div class="places-speaking-fields">'+parts.map((p,i)=>
+  '<div class="places-speaking-part" data-part="'+esc(p.key)+'">'+
+  '<label class="places-writing-field" for="sp-'+esc(p.key)+'"><span lang="en" dir="ltr">'+(i+1)+'. '+esc(p.en)+'</span><span lang="ar" dir="rtl">'+esc(p.ar)+'</span></label>'+
+  '<textarea id="sp-'+esc(p.key)+'" class="places-speaking-draft" data-stage="'+esc(p.key)+'" rows="2" placeholder="'+esc(p.placeholder)+'">'+esc(saved["final-"+p.key]||"")+'</textarea>'+
+  '</div>').join("")+'</div>'+
+ '<div class="places-controls"><label class="places-speed-label">Playback speed <select data-presentation-speed><option value=".62">Extra slow 0.62×</option><option value=".72" selected>Slow 0.72×</option><option value=".85">Steady 0.85×</option><option value="1">Normal 1×</option></select></label>'+
+ '<button class="btn" type="button" data-builder-listen>🔊 Listen to my script</button>'+
+ '<button class="btn secondary" type="button" data-builder-check>✓ Check five parts / فحص الأجزاء</button></div>'+
+ '<div class="places-bilingual-feedback" role="status" data-builder-feedback>'+
+ '<p lang="en">Use the five parts to organize your spoken presentation.</p><p lang="ar" dir="rtl">اكتب جملة أو جملتين لكل جزء لتنظيم عرضك الشفهي.</p></div>'+
+ '<fieldset class="places-rubric"><legend>Self reflection / تقييم ذاتي</legend>'+
+ '<label><input type="checkbox"> I introduced the place clearly.</label>'+
+ '<label><input type="checkbox"> I gave at least one verifiable fact.</label>'+
+ '<label><input type="checkbox"> I explained positive and negative opinions.</label>'+
+ '<label><input type="checkbox"> I concluded clearly.</label></fieldset>';
  $all("[data-stage]",sec).forEach(t=>t.oninput=()=>saveDraft("final-"+t.dataset.stage,t.value));
  const getLines=()=>$all("[data-stage]",sec).map(t=>t.value.trim()).filter(Boolean);
- $("[data-builder-listen]",sec).onclick=()=>{const txt=getLines().join(". ");if(!txt){$("[data-builder-feedback]",sec).textContent="Write at least one sentence first.";return}say(txt,"en-US",Number($("[data-presentation-speed]",sec).value))};
+ $("[data-builder-listen]",sec).onclick=()=>{
+  const lines=getLines();
+  if(!lines.length){$("[data-builder-feedback]",sec).textContent="Write a sentence first. / اكتب جملة أولًا.";return}
+  say(lines.join(" ... "),"en-US",Number($("[data-presentation-speed]",sec).value));
+ };
  $("[data-builder-check]",sec).onclick=()=>{
- const fields=$all("[data-stage]",sec),filled=fields.filter(t=>t.value.trim()).length;
- const missing=fields.filter(t=>!t.value.trim()).map(t=>t.dataset.stage);
- $("[data-builder-feedback]",sec).textContent=filled===5?"✓ Your 5-part structure is ready. Rehearse aloud and record your presentation.":"You completed "+filled+"/5 steps. Add: "+missing.join(", ")+".";
- };
- const recBtn=$("[data-record]",sec),stopBtn=$("[data-stop-record]",sec),status=$("[data-record-status]",sec);
- recBtn.onclick=async()=>{
-  if(!navigator.mediaDevices?.getUserMedia||typeof MediaRecorder==="undefined"){status.textContent="This browser does not support microphone recording.";return}
-  try{
-   stream=await navigator.mediaDevices.getUserMedia({audio:true});
-   const formats=["audio/webm;codecs=opus","audio/mp4","audio/webm"];const mime=formats.find(t=>MediaRecorder.isTypeSupported(t));
-   recorder=new MediaRecorder(stream,mime?{mimeType:mime}:undefined);chunks=[];startStamp=Date.now();
-   recorder.ondataavailable=e=>{if(e.data.size)chunks.push(e.data)};
-   recorder.onstop=()=>{
-    stream?.getTracks().forEach(t=>t.stop());stream=null;
-    const blob=new Blob(chunks,{type:recorder.mimeType||"audio/webm"});
-    if(blobURL)URL.revokeObjectURL(blobURL);blobURL=URL.createObjectURL(blob);
-    const audio=$("[data-playback]",sec),link=$("[data-download-audio]",sec);
-    audio.src=blobURL;audio.hidden=false;link.href=blobURL;link.hidden=false;
-    link.download="places-speaking-practice."+(blob.type.includes("mp4")?"m4a":"webm");
-    status.textContent="Recorded "+Math.round((Date.now()-startStamp)/1000)+" seconds. Listen and self-assess.";
-   };
-   recorder.start();recBtn.disabled=true;stopBtn.disabled=false;status.textContent="Recording..."; 
-  }catch{status.textContent="Microphone access denied or unavailable. Check Safari/site permissions."}
- };
- stopBtn.onclick=()=>{
-  if(recorder?.state==="recording")recorder.stop();
-  recBtn.disabled=false;stopBtn.disabled=true;
+  const fields=$all("[data-stage]",sec),filled=fields.filter(t=>t.value.trim()).length;
+  const msg=$("[data-builder-feedback]",sec);
+  msg.innerHTML='<p lang="en" dir="ltr">'+(filled===5?"✓ All five parts have a draft. Now rehearse aloud.":"You filled "+filled+" of 5 parts. Please finish the missing sections.")+'</p>'+
+  '<p lang="ar" dir="rtl">'+(filled===5?"✅ كتبت مسودات الأجزاء الخمسة. الآن تدرّب على الإلقاء.":"أكملت "+filled+" من خمسة أجزاء. أكمل الأجزاء الناقصة قبل التسجيل الكامل.")+'</p>';
  };
  return sec;
 }
@@ -226,8 +203,8 @@ function writingLab(id){
  (id!=="grammar"?'<div class="places-concept-note"><strong>Fact / حقيقة</strong><p>A statement you can verify with evidence. Example: Vancouver is in Canada.</p><p dir="rtl" lang="ar">الحقيقة: معلومة يمكن إثباتها أو التحقق منها باستخدام مصدر موثوق، مثل: فانكوفر مدينة في كندا.</p><strong>Opinion / رأي</strong><p>A personal judgment that others might disagree with. Example: I think Vancouver is beautiful.</p><p dir="rtl" lang="ar">الرأي: حكم أو تفضيل شخصي قد يختلف معه الآخرون، مثل: أعتقد أن فانكوفر جميلة. حتى دون I think قد تظل العبارة رأيًا.</p></div>':'<div class="places-concept-note"><strong>Past simple / الماضي البسيط</strong><p>Use subject + past verb + rest, e.g. I visited Venice. Questions: Did + subject + base verb?</p><p dir="rtl" lang="ar">الجملة في الماضي: فاعل + فعل ماضٍ + بقية الجملة. في السؤال نبدأ بـ Did ثم الفاعل والفعل بصيغته الأصلية.</p></div>')+
  '<button type="button" class="btn secondary" data-example>Show example / مثال</button><p class="places-note" data-example-text hidden>'+esc(example)+'</p>'+
  '<label class="places-writing-field">My writing <textarea data-writing rows="4" placeholder="Write your short answer here...">'+esc(saved["writing-"+id]||"")+'</textarea></label>'+
- '<div class="places-controls"><button type="button" class="btn" data-write-review>✓ Self-check</button><button type="button" class="btn secondary" data-read-writing>🔊 Listen to what I wrote</button><button type="button" class="btn secondary" data-ai-feedback>💬 Ask AI for writing feedback</button></div>'+
- '<p role="status" class="places-note" data-write-feedback></p>'+
+ '<div class="places-controls"><button type="button" class="btn" data-write-review>✓ Check requirements / تحقق من الشروط</button><button type="button" class="btn secondary" data-read-writing>🔊 Listen to what I wrote</button><button type="button" class="btn secondary" data-ai-feedback>💬 Ask AI for writing feedback</button></div>'+
+ '<div role="status" class="places-bilingual-feedback" data-write-feedback></div>'+
  '<p class="places-note">This is formative practice with a self-check, not automatic scoring of writing quality.</p>';
  const w=$("[data-writing]",sec);w.oninput=()=>saveDraft("writing-"+id,w.value);
  $("[data-example]",sec).onclick=()=>{$("[data-example-text]",sec).hidden=!$("[data-example-text]",sec).hidden};
@@ -238,29 +215,31 @@ function writingLab(id){
   window.PLACES_ASK_TUTOR("Please review my short English writing about a place. Show 2 things I did well, up to 2 corrected sentences, and one tip to improve. Explain in simple Arabic and English. Here is my draft:\n"+draft.slice(0,450));
  };
  $("[data-write-review]",sec).onclick=()=>{
-  const sentences=w.value.trim().split(/[.!?]+/).map(x=>x.trim()).filter(Boolean);
-  const count=w.value.trim().split(/\s+/).filter(Boolean).length;
-  const txt=w.value.trim(),started=/^[A-Z]/.test(txt),ended=/[.!?]$/.test(txt);
-  const lines=[];
-  if(!count){lines.push("Write a first sentence. / اكتب الجملة الأولى ثم الثانية.");}
-  else{
-   lines.push("You wrote "+sentences.length+" sentence(s). / كتبت "+sentences.length+" جملة.");
-   if(sentences.length<2)lines.push("Add a second sentence. / أضف جملة ثانية.");
-   if(!started)lines.push("Begin with a capital letter. / ابدأ الجملة الإنجليزية بحرف كبير.");
-   if(!ended)lines.push("Add a full stop or another suitable punctuation mark. / ضع نقطة أو علامة ترقيم مناسبة في نهاية الجملة.");
-   if(id==="grammar"){
-    if(!/\b(visited|went|saw|walked|lived|travelled|traveled|played|was|were|did)\b/i.test(txt))lines.push("Check that your actions happened in the past. / تأكد من استخدام فعل ماضٍ مثل visited أو went.");
-    if(/\bdid\s+\w+\s+\w+ed\b/i.test(txt))lines.push("After Did, use the base verb, not -ed. / بعد Did نستخدم المصدر مثل visit وليس visited.");
-    lines.push("Example: I visited Venice. / مثال: زرت البندقية.");
-   }else{
-    const hasOpinion=/\b(i think|in my opinion|personally|i believe|beautiful|best|wonderful|crowded|boring|interesting)\b/i.test(txt);
-    if(!hasOpinion)lines.push("Add a personal judgment, for example 'In my opinion…'. / أضف رأيًا شخصيًا مثل In my opinion.");
-    lines.push("A fact must be checkable; an opinion expresses a judgment. / الحقيقة قابلة للتحقق، أما الرأي فهو حكم شخصي. تحقّق من صحة المعلومة بنفسك.");
-   }
-   lines.push("This quick self-check does not verify all grammar or facts. Ask Gemini for a fuller explanation if connected. / هذا فحص مبدئي لا يثبت صحة القواعد أو المعلومات كلها؛ يمكنك طلب شرح أكثر من المساعد إذا كان متصلًا.");
+  const raw=w.value.trim(),sentences=raw.split(/[.!?]+/).map(z=>z.trim()).filter(Boolean),wc=raw.split(/\s+/).filter(Boolean).length;
+  const tests=[
+   {ok:sentences.length>=2,en:"At least two sentences.",ar:"كتابة جملتين على الأقل."},
+   {ok:/^[A-Z]/.test(raw),en:"Start with a capital letter.",ar:"البدء بحرف إنجليزي كبير."},
+   {ok:/[.!?]$/.test(raw),en:"Finish with punctuation.",ar:"وضع علامة ترقيم مناسبة في النهاية."}
+  ];
+  if(id==="grammar"){
+   tests.push({ok:/\b(visited|went|saw|walked|lived|travelled|traveled|played|was|were|did|stayed|arrived|took|made|had)\b/i.test(raw),
+    en:"A recognisable past-simple verb from the examples.",ar:"وجود فعل ماضٍ واضح من الأمثلة."});
+   tests.push({ok:!/\bdid\s+\w+\s+\w+ed\b/i.test(raw),en:"No obvious -ed after Did.",ar:"عدم وضع -ed على الفعل بعد Did."});
+  }else{
+   tests.push({ok:/\b(i think|in my opinion|personally|i believe|beautiful|best|wonderful|crowded|boring|interesting)\b/i.test(raw),
+    en:"A phrase suggesting personal opinion.",ar:"وجود تعبير يدل على رأي شخصي."});
   }
-  $("[data-write-feedback]",sec).textContent=lines.join("\n");
- };
+  const passed=tests.filter(x=>x.ok).length,complete=wc>0&&passed===tests.length;
+  const english=tests.map(x=>'<p lang="en" dir="ltr">'+(x.ok?'✅ PASS':'❌ CHECK')+' — '+esc(x.en)+'</p>').join("");
+  const arabic=tests.map(x=>'<p lang="ar" dir="rtl">'+(x.ok?'✅ متحقق':'❌ يحتاج تعديل')+' — '+esc(x.ar)+'</p>').join("");
+  const ex=id==="grammar"?"I visited Venice. I saw a canal.":"Vancouver is in Canada. In my opinion, its parks are beautiful.";
+  $("[data-write-feedback]",sec).innerHTML='<h3>'+ (complete?"✅ Requirements met / الشروط الظاهرة متحققة":"⚠️ Revision needed / تحتاج إلى مراجعة") +'</h3>'+
+   '<div class="places-feedback-languages"><div>'+english+'</div><div>'+arabic+'</div></div>'+
+   '<p lang="en" dir="ltr"><strong>Model answer:</strong> '+esc(ex)+'</p>'+
+   '<p lang="ar" dir="rtl"><strong>إجابة نموذجية:</strong> '+esc(id==="grammar"?"زرت البندقية. رأيت قناة مائية.":"فانكوفر تقع في كندا. وفي رأيي حدائقها جميلة.")+'</p>'+
+   '<p lang="en" dir="ltr">This checks visible requirements, not whether every sentence is correct. Use AI feedback or a teacher to review meaning and grammar.</p>'+
+   '<p lang="ar" dir="rtl">الفحص يحدد الشروط الظاهرة فقط، ولا يضمن أن كل جملة صحيحة نحويًا أو معنويًا. استخدم المساعد أو المعلم لمراجعة الجودة.</p>';
+ }
  return sec;
 }
 function enrichLesson(){
