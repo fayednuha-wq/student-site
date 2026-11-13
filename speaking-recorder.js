@@ -10,7 +10,7 @@ const P=[
  ["end","Conclusion","الخاتمة","Finally, I recommend visiting Venice. Thank you for listening."]
 ];
 const labs={speaking:{parts:{},full:null},final:{parts:{},full:null}};
-let active=null,playing=null;
+let active=null,playing=null,resetGeneration=0;
 function message(node,en,ar){
  if(!node)return;
  node.innerHTML="";
@@ -56,7 +56,7 @@ function setupRecorder(host,lesson,key){
   if(active||!box.isConnected){stream.getTracks().forEach(t=>t.stop());return}
   try{
    let rec;const mt=mimeChoice();try{rec=new MediaRecorder(stream,mt?{mimeType:mt,audioBitsPerSecond:32000}:{audioBitsPerSecond:32000})}catch{rec=new MediaRecorder(stream)}
-   const chunks=[],time=Date.now();
+   const chunks=[],time=Date.now(),generation=resetGeneration;
    rec.ondataavailable=e=>{if(e.data.size)chunks.push(e.data)};
    active={rec,stream,key,lesson,timer:null};const thisRec=active;
    thisRec.timer=setTimeout(()=>{if(active===thisRec&&rec.state==="recording")rec.stop()},180000);
@@ -64,6 +64,7 @@ function setupRecorder(host,lesson,key){
     if(thisRec.timer)clearTimeout(thisRec.timer);
     stream.getTracks().forEach(t=>t.stop());
     const blob=new Blob(chunks,{type:rec.mimeType||"audio/webm"});
+    if(generation!==resetGeneration){if(active===thisRec)active=null;return}
     if(blob.size){
      const old=saved();drop(old);
      const value={blob,url:URL.createObjectURL(blob),duration:Math.round((Date.now()-time)/1000)};
@@ -180,6 +181,7 @@ function onLessonRender(){
 window.addEventListener("places:render",onLessonRender);
 onLessonRender();
 function clearAudio(){
+ resetGeneration++;
  stopRecording();stopPlayback();
  for(const x of Object.values(labs)){
   Object.values(x.parts).forEach(drop);drop(x.full);x.parts={};x.full=null;
