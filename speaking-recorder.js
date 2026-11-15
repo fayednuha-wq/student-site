@@ -71,7 +71,7 @@ function setupRecorder(host,lesson,key){
      if(key==="full")store.full=value;else store.parts[key]=value;
      if(box.isConnected){
       refresh();message(note,"Recorded "+value.duration+" seconds. Replay or try again.","تم التسجيل لمدة "+value.duration+" ثانية. اسمعه أو أعد المحاولة.");
-      if(key==="full"){const btn=$("[data-assess-audio]",box.closest(".places-voice-studio"));if(btn)btn.disabled=false}
+      updateAssessButton(box.closest(".places-voice-studio"),lesson);
      }
     }
     if(active===thisRec)active=null;
@@ -102,41 +102,83 @@ function playParts(lesson,note){
  };
  next();
 }
+function updateAssessButton(studio,lesson){
+ if(!studio)return;
+ const button=$("[data-assess-audio]",studio),note=$("[data-assess-availability]",studio);
+ const n=P.filter(p=>!!labs[lesson].parts[p[0]]).length;
+ const full=!!labs[lesson].full;
+ if(button){
+  button.disabled=!full&&n<5;
+  button.textContent=full?"✨ Evaluate complete recording / قيّم التسجيل الكامل":
+                     n===5?"✨ Evaluate my five recordings / قيّم تسجيلاتي الخمسة":
+                     "✨ AI speaking feedback / تقييم العرض صوتيًا";
+ }
+ if(note){
+  message(note,full?"Your full presentation is ready for AI feedback.":
+                  n===5?"All five segments are ready for AI feedback. This assesses separate parts, not continuous fluency.":
+                  "Record all five parts ("+n+"/5 done) OR one continuous full take to unlock AI feedback.",
+               full?"تسجيل العرض الكامل جاهز للتقييم.":
+                  n===5?"اكتملت التسجيلات الخمسة ويمكن تقييمها. هذا تقييم لأجزاء منفصلة وليس للطلاقة المتصلة.":
+                  "لتفعيل التقييم: سجّل الأجزاء الخمسة (أنجزت "+n+"/5)، أو سجّل عرضًا كاملًا متصلًا.");
+ }
+}
 function base64(blob){return new Promise((resolve,reject)=>{
  const reader=new FileReader();reader.onload=()=>resolve(String(reader.result).split(",")[1]);
  reader.onerror=()=>reject(new Error("Audio could not be read"));reader.readAsDataURL(blob);
 })}
 async function feedback(lesson,studio){
- const output=$("[data-voice-feedback]",studio),button=$("[data-assess-audio]",studio),clip=labs[lesson].full?.blob;
- if(!clip){message(output,"Record the complete presentation before asking for AI feedback.","سجّل العرض كاملًا قبل طلب التقييم.");return}
+ const output=$("[data-voice-feedback]",studio),button=$("[data-assess-audio]",studio);
+ const full=labs[lesson].full?.blob;
+ const parts=P.map(p=>labs[lesson].parts[p[0]]?.blob);
+ const hasParts=parts.every(Boolean);
+ if(!full&&!hasParts){
+  updateAssessButton(studio,lesson);
+  message(output,"You need all five parts or one full recording first.","يجب تسجيل الأجزاء الخمسة كلها أو عرض كامل واحد قبل طلب التقييم.");return;
+ }
+ const segmented=!full;
+ const clips=segmented?parts:[full];
+ const bytes=clips.reduce((n,b)=>n+b.size,0);
  const endpoint=window.PLACES_AI_ENDPOINT,c=window.PLACES_CONTEXT?.();
  if(typeof endpoint!=="string"||!endpoint.startsWith("https://")||c?.stage!=="lesson"||!c.preComplete){
-  message(output,"The Gemini voice service is not configured.","خدمة Gemini الصوتية غير مهيأة أو هذا النشاط مقفل.");return
+  message(output,"Gemini voice analysis is not configured or the lesson is locked.","خدمة تحليل الصوت غير مهيأة أو أن الدرس مقفل.");return;
  }
- if(clip.size>2500000){message(output,"Audio too large; try 60–90 seconds.","التسجيل كبير جدًا، جرب مدة 60–90 ثانية.");return}
- if(!confirm("Your full voice recording and optional written draft will be sent to Google Gemini via Cloudflare. Avoid names or private information. AI feedback is formative, not an official score or validated pronunciation test. Continue?"))return;
- button.disabled=true;message(output,"Gemini is analyzing your real voice recording…","يقوم Gemini بتحليل تسجيلك الصوتي الفعلي…");
+ if(bytes>2500000){
+  message(output,"Audio is too large. Shorten each segment or the full take (maximum 2.5 MB total).","حجم التسجيلات أكبر من 2.5 ميجابايت. اختصرها وحاول من جديد.");return;
+ }
+ const label=segmented?"the five individually recorded speaking parts":"your one continuous full presentation";
+ if(!confirm("You are about to send "+label+" through Cloudflare to Google Gemini for optional formative feedback. Avoid names or private information. This is NOT a validated pronunciation score. Continue?"))return;
+ button.disabled=true;
+ message(output,"Gemini is examining the actual recorded audio…","يقوم Gemini بتحليل تسجيلك الصوتي الحقيقي…");
  try{
-  const data=await base64(clip);
-  const ref=lesson==="final"?$$("[data-stage]").map(e=>e.value.trim()).filter(Boolean).join(" "):P.map(x=>x[3]).join(" ");
-  const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),50000);let response;
-  try{response=await fetch(endpoint.replace(/\/+$/,"")+"/speaking-feedback",{
-    method:"POST",headers:{"Content-Type":"application/json"},signal:controller.signal,
-    body:JSON.stringify({stage:c.stage,preComplete:c.preComplete,lessonId:lesson,
-      audio:{mimeType:(clip.type||"audio/webm").split(";")[0],data},referenceScript:ref.slice(0,1200)})
-  })}finally{clearTimeout(timer)}
-  const payload=await response.json();
-  if(!response.ok||typeof payload.feedback!=="string")throw new Error(payload.error||"Gemini couldn't analyze this clip");
+  const encoded=await Promise.all(clips.map(base64));
+  const reference=lesson==="final"?$$("[data-stage]",studio.closest(".shell .panel")||document).map(e=>e.value.trim()).filter(Boolean).join(" "):P.map(x=>x[3]).join(" ");
+  const input={stage:c.stage,preComplete:c.preComplete,lessonId:lesson,referenceScript:reference.slice(0,1200)};
+  const entry=(blob,i)=>({mimeType:(blob.type||"audio/webm").split(";")[0],data:encoded[i]});
+  if(segmented)input.audioParts=P.map((part,i)=>({part:part[0],audio:entry(clips[i],i)}));
+  else input.audio=entry(full,0);
+  const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),50000);
+  let response;
+  try{
+   response=await fetch(endpoint.replace(/\/+$/,"")+"/speaking-feedback",{
+    method:"POST",headers:{"Content-Type":"application/json"},signal:controller.signal,body:JSON.stringify(input)
+   })
+  }finally{clearTimeout(timer)}
+  let data;try{data=await response.json()}catch{throw new Error("AI server returned invalid data")}
+  if(!response.ok||typeof data.feedback!=="string")throw new Error(data.error||"Gemini could not analyze the recordings");
   output.innerHTML="";
-  const p=document.createElement("p");p.dir="auto";p.className="places-audio-review";p.textContent=payload.feedback;output.append(p);
-  const disclaimer=document.createElement("p");disclaimer.lang="ar";disclaimer.dir="rtl";
-  disclaimer.textContent="هذه ملاحظات تدريبية مستندة إلى التسجيل، وليست درجة معتمدة أو حكمًا قاطعًا على النطق. قد يخطئ الذكاء الاصطناعي.";
-  output.append(disclaimer);
- }catch(e){
-  const reason=e?.name==="AbortError"?"Timed out":String(e?.message||e);
-  message(output,"AI feedback unavailable: "+reason,"تعذر تحليل التسجيل: "+reason);
- }finally{button.disabled=false}
+  const mode=document.createElement("p");mode.lang="ar";mode.dir="rtl";
+  mode.textContent=segmented?"تحليل مبني على خمسة مقاطع مستقلة؛ لا يمثل حكمًا على سلاسة عرض متصل.":"تحليل مبني على التسجيل الكامل المتصل.";
+  output.append(mode);
+  const ans=document.createElement("p");ans.dir="auto";ans.className="places-audio-review";ans.textContent=data.feedback;output.append(ans);
+  const note=document.createElement("p");note.lang="ar";note.dir="rtl";
+  note.textContent="التقييم تكويني وليس درجة رسمية أو قياسًا معتمدًا للنطق، وقد يخطئ النموذج.";
+  output.append(note);
+ }catch(err){
+  const reason=err?.name==="AbortError"?"Timed out / انتهت مهلة التحليل":String(err?.message||err);
+  message(output,"AI audio feedback failed: "+reason,"تعذر تقييم التسجيل: "+reason);
+ }finally{updateAssessButton(studio,lesson)}
 }
+
 function mount(lesson){
  const panel=$(".shell .panel");if(!panel||$(".places-voice-studio",panel))return;
  const anchor=lesson==="speaking"?$(".places-oral-sequencing",panel):$(".places-speaking-builder",panel);
@@ -153,7 +195,7 @@ function mount(lesson){
  '<p lang="en" dir="ltr">Record one complete take from introduction through conclusion (recommended: 60–90 seconds).</p>'+
  '<p lang="ar" dir="rtl">سجّل عرضًا واحدًا متكاملًا من المقدمة إلى الخاتمة (المدة المقترحة: 60–90 ثانية).</p>'+
  '<div data-full-recorder></div></div>'+
- '<div class="places-ai-audio"><button class="btn" type="button" data-assess-audio disabled>✨ AI feedback on my recorded speaking / تقييم العرض صوتيًا</button>'+
+ '<div class="places-ai-audio"><button class="btn" type="button" data-assess-audio disabled>✨ AI feedback on my recorded speaking / تقييم العرض صوتيًا</button><div class="places-bilingual-feedback" data-assess-availability></div>'+
  '<div role="status" class="places-bilingual-feedback" data-voice-feedback></div>'+
  '<p lang="en" dir="ltr">Voice upload happens only with permission. AI commentary is not a teacher grade.</p>'+
  '<p lang="ar" dir="rtl">لا يُرسل التسجيل للذكاء الاصطناعي إلا بموافقتك. الملاحظات تدريبية ولا تمثل تقييم المعلم.</p></div>';
@@ -168,7 +210,7 @@ function mount(lesson){
   box.append(en,ar,txt);list.append(box);setupRecorder(box,lesson,item[0]);
  }
  setupRecorder($("[data-full-recorder]",root),lesson,"full");
- $("[data-assess-audio]",root).disabled=!labs[lesson].full;
+ updateAssessButton(root,lesson);
  $("[data-play-parts]",root).onclick=()=>playParts(lesson,$("[data-play-status]",root));
  $("[data-stop-play]",root).onclick=()=>{stopPlayback();message($("[data-play-status]",root),"Playback stopped.","تم إيقاف التشغيل.");};
  $("[data-assess-audio]",root).onclick=()=>feedback(lesson,root);
