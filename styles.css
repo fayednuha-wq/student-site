@@ -146,3 +146,26 @@
 .places-voice-studio [data-assess-audio]:disabled{opacity:.55;cursor:not-allowed}
 .places-voice-studio [data-voice-feedback] .places-audio-review{white-space:pre-line;font-size:15px;line-height:1.85}
 @media(max-width:700px){.places-voice-studio .places-controls .btn{flex:1;min-width:145px}.places-voice-studio .places-record-part{padding:12px}}
+
+/* Tutor voice playback and expandable chat composer */
+#ph-stop-speech{font-size:11px;white-space:nowrap;min-height:36px;background:#fff3!important;color:#fff!important;border:1px solid #ffffff88!important}
+#ph-stop-speech:focus-visible,.ph-say:focus-visible{outline:3px solid #ffc857;outline-offset:2px}
+#ph-panel header{flex-wrap:wrap;row-gap:7px}
+#ph-panel header strong{flex:1;min-width:105px}
+#ph-panel header>div{display:flex;align-items:center;gap:4px;flex-wrap:wrap}
+#ph-panel header button{margin-inline-start:2px}
+#ph-form{align-items:flex-end}
+#ph-input{display:block;width:100%;box-sizing:border-box;line-height:1.6;min-height:70px;max-height:190px;resize:vertical;overflow-y:auto;white-space:pre-wrap;overflow-wrap:anywhere;direction:auto}
+#ph-send{min-height:47px;align-self:flex-end;flex-shrink:0}
+#ph-input-tip{display:block;padding:0 12px 7px;color:var(--muted);font-size:10px;line-height:1.4}
+.ph-say{display:inline-flex;justify-content:center;align-items:center;min-width:32px;min-height:29px;cursor:pointer}
+#ph-messages .ph-msg{white-space:pre-wrap;word-break:break-word}
+@media(max-width:520px){#ph-form{padding:7px}#ph-send{padding:8px 10px}#ph-input{font-size:14px}#ph-panel header{padding:9px 11px}}
+/* Keep learner's original writing and display specifically evidenced corrections */
+.places-writing-marked,.places-writing-ai{border:1px solid var(--line);padding:14px;margin:14px 0;border-radius:12px;background:var(--paper);overflow-wrap:anywhere}
+.places-writing-marked h3,.places-writing-ai h3{font-size:17px;margin:4px 0 12px}
+.places-draft-preview{font:15px/2 Cairo,sans-serif;white-space:pre-wrap;overflow-wrap:anywhere;background:var(--bg);border:1px dashed var(--line);padding:13px;border-radius:10px;unicode-bidi:plaintext}
+.places-draft-preview mark{background:#ffe2a2;color:#523500;border-radius:4px;padding:1px 2px;font-weight:800}
+.places-writing-ai .places-correction-item{border-inline-start:4px solid #ab7b2a;background:var(--bg);padding:10px 13px;margin:11px 0;border-radius:8px}
+.places-writing-ai p[lang=ar],.places-writing-marked p[lang=ar]{line-height:1.95;direction:rtl}
+.places-writing-ai p[lang=en],.places-writing-marked p[lang=en]{direction:ltr;unicode-bidi:isolate}
