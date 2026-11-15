@@ -194,6 +194,47 @@ function speakStudio(){
  };
  return sec;
 }
+function appendLines(container,en,ar){
+ const e=document.createElement("p");e.lang="en";e.dir="ltr";e.textContent=en;
+ const a=document.createElement("p");a.lang="ar";a.dir="rtl";a.textContent=ar;
+ container.append(e,a);
+}
+function obviousWritingIssues(draft,id){
+ const errors=[];
+ if(id!=="grammar")return errors;
+ const add=(original,suggestion,explanationAr)=>{if(!errors.some(x=>x.original===original))errors.push({original,suggestion,explanationAr})};
+ const patterns=[
+  [/\bgoed\b/gi,"went","الفعل go غير منتظم، وماضيه went وليس goed."],
+  [/\bwented\b/gi,"went","went صيغة ماضية بحد ذاتها؛ لا نضيف إليها -ed."],
+  [/\bseed\b/gi,"saw","الفعل see غير منتظم، وماضيه saw."],
+  [/\b(?:did|didn't|did not)\s+(?:[A-Za-z]+\s+)?(visited|walked|played|lived|stayed|traveled|travelled|went|saw|goes)\b/gi,null,"بعد Did أو didn't نستخدم الفعل بصيغته الأساسية، ولا نستخدم الماضي."]
+ ];
+ for(const [regex,replacement,why] of patterns){
+  for(const match of draft.matchAll(regex)){
+   const wrong=match[1]||match[0];
+   const bases={visited:"visit",walked:"walk",played:"play",lived:"live",stayed:"stay",traveled:"travel",travelled:"travel",went:"go",saw:"see",goes:"go"};
+   add(wrong,replacement||bases[wrong.toLowerCase()]||wrong,why);
+  }
+ }
+ return errors;
+}
+function renderMarkedText(container,text,wrongPhrases){
+ const found=[];
+ wrongPhrases.filter(Boolean).forEach(word=>{
+  const lower=text.toLocaleLowerCase(),needle=String(word).toLocaleLowerCase();
+  let from=0,pos;
+  while((pos=lower.indexOf(needle,from))>=0){if(!found.some(x=>pos<x.end&&pos+needle.length>x.start))found.push({start:pos,end:pos+needle.length});from=pos+needle.length}
+ });
+ found.sort((a,b)=>a.start-b.start);
+ let cursor=0;
+ for(const seg of found){
+  if(seg.start>cursor)container.append(document.createTextNode(text.slice(cursor,seg.start)));
+  const mark=document.createElement("mark");mark.textContent=text.slice(seg.start,seg.end);
+  mark.title="Suggested change / تعديل مقترح";container.append(mark);
+  cursor=seg.end;
+ }
+ container.append(document.createTextNode(text.slice(cursor)));
+}
 function writingLab(id){
  const sec=document.createElement("section");sec.className="task places-practice-lab";
  const topic=id==="grammar"?"Write two past-simple sentences about a trip.":"Write one verifiable fact and one personal opinion about a place.";
@@ -204,42 +245,96 @@ function writingLab(id){
  '<button type="button" class="btn secondary" data-example>Show example / مثال</button><p class="places-note" data-example-text hidden>'+esc(example)+'</p>'+
  '<label class="places-writing-field">My writing <textarea data-writing rows="4" placeholder="Write your short answer here...">'+esc(saved["writing-"+id]||"")+'</textarea></label>'+
  '<div class="places-controls"><button type="button" class="btn" data-write-review>✓ Check requirements / تحقق من الشروط</button><button type="button" class="btn secondary" data-read-writing>🔊 Listen to what I wrote</button><button type="button" class="btn secondary" data-ai-feedback>💬 Ask AI for writing feedback</button></div>'+
- '<div role="status" class="places-bilingual-feedback" data-write-feedback></div>'+
+ '<div role="status" class="places-bilingual-feedback" data-write-feedback></div><div class="places-writing-marked" data-writing-marked hidden></div><div class="places-writing-ai" data-writing-ai hidden></div>'+
  '<p class="places-note">This is formative practice with a self-check, not automatic scoring of writing quality.</p>';
- const w=$("[data-writing]",sec);w.oninput=()=>saveDraft("writing-"+id,w.value);
+ const w=$("[data-writing]",sec);
+ w.oninput=()=>{
+  saveDraft("writing-"+id,w.value);
+  $("[data-writing-marked]",sec).hidden=true;
+  $("[data-writing-ai]",sec).hidden=true;
+ };
+
  $("[data-example]",sec).onclick=()=>{$("[data-example-text]",sec).hidden=!$("[data-example-text]",sec).hidden};
  $("[data-read-writing]",sec).onclick=()=>{if(w.value.trim())say(w.value)};
- $("[data-ai-feedback]",sec).onclick=()=>{
-  const draft=w.value.trim();if(draft.length<15){$("[data-write-feedback]",sec).textContent="Write at least two short sentences before requesting detailed feedback.";return}
-  if(!window.PLACES_ASK_TUTOR){$("[data-write-feedback]",sec).textContent="The AI helper is not available. Use the self-check instead.";return}
-  window.PLACES_ASK_TUTOR("Please review my short English writing about a place. Show 2 things I did well, up to 2 corrected sentences, and one tip to improve. Explain in simple Arabic and English. Here is my draft:\n"+draft.slice(0,450));
- };
- $("[data-write-review]",sec).onclick=()=>{
-  const raw=w.value.trim(),sentences=raw.split(/[.!?]+/).map(z=>z.trim()).filter(Boolean),wc=raw.split(/\s+/).filter(Boolean).length;
-  const tests=[
-   {ok:sentences.length>=2,en:"At least two sentences.",ar:"كتابة جملتين على الأقل."},
-   {ok:/^[A-Z]/.test(raw),en:"Start with a capital letter.",ar:"البدء بحرف إنجليزي كبير."},
-   {ok:/[.!?]$/.test(raw),en:"Finish with punctuation.",ar:"وضع علامة ترقيم مناسبة في النهاية."}
-  ];
-  if(id==="grammar"){
-   tests.push({ok:/\b(visited|went|saw|walked|lived|travelled|traveled|played|was|were|did|stayed|arrived|took|made|had)\b/i.test(raw),
-    en:"A recognisable past-simple verb from the examples.",ar:"وجود فعل ماضٍ واضح من الأمثلة."});
-   tests.push({ok:!/\bdid\s+\w+\s+\w+ed\b/i.test(raw),en:"No obvious -ed after Did.",ar:"عدم وضع -ed على الفعل بعد Did."});
-  }else{
-   tests.push({ok:/\b(i think|in my opinion|personally|i believe|beautiful|best|wonderful|crowded|boring|interesting)\b/i.test(raw),
-    en:"A phrase suggesting personal opinion.",ar:"وجود تعبير يدل على رأي شخصي."});
+ $("[data-ai-feedback]",sec).onclick=async()=>{
+  const draft=w.value.trim(),output=$("[data-writing-ai]",sec);
+  output.hidden=false;
+  if(draft.length<8){output.textContent="Write at least one sentence first. / اكتب جملة واحدة على الأقل أولًا.";return}
+  const endpoint=window.PLACES_AI_ENDPOINT,c=contexts();
+  if(typeof endpoint!=="string"||!endpoint.startsWith("https://")){
+   output.textContent="Gemini is not connected; the local checks remain available. / لم يتصل Gemini؛ استخدم فحص الشروط.";
+   window.PLACES_ASK_TUTOR?.("Please correct my English text and explain the exact changes in Arabic: "+draft.slice(0,900));
+   return;
   }
-  const passed=tests.filter(x=>x.ok).length,complete=wc>0&&passed===tests.length;
-  const english=tests.map(x=>'<p lang="en" dir="ltr">'+(x.ok?'✅ PASS':'❌ CHECK')+' — '+esc(x.en)+'</p>').join("");
-  const arabic=tests.map(x=>'<p lang="ar" dir="rtl">'+(x.ok?'✅ متحقق':'❌ يحتاج تعديل')+' — '+esc(x.ar)+'</p>').join("");
-  const ex=id==="grammar"?"I visited Venice. I saw a canal.":"Vancouver is in Canada. In my opinion, its parks are beautiful.";
-  $("[data-write-feedback]",sec).innerHTML='<h3>'+ (complete?"✅ Requirements met / الشروط الظاهرة متحققة":"⚠️ Revision needed / تحتاج إلى مراجعة") +'</h3>'+
-   '<div class="places-feedback-languages"><div>'+english+'</div><div>'+arabic+'</div></div>'+
-   '<p lang="en" dir="ltr"><strong>Model answer:</strong> '+esc(ex)+'</p>'+
-   '<p lang="ar" dir="rtl"><strong>إجابة نموذجية:</strong> '+esc(id==="grammar"?"زرت البندقية. رأيت قناة مائية.":"فانكوفر تقع في كندا. وفي رأيي حدائقها جميلة.")+'</p>'+
-   '<p lang="en" dir="ltr">This checks visible requirements, not whether every sentence is correct. Use AI feedback or a teacher to review meaning and grammar.</p>'+
-   '<p lang="ar" dir="rtl">الفحص يحدد الشروط الظاهرة فقط، ولا يضمن أن كل جملة صحيحة نحويًا أو معنويًا. استخدم المساعد أو المعلم لمراجعة الجودة.</p>';
- }
+  const button=$("[data-ai-feedback]",sec);
+  button.disabled=true;
+  output.textContent="Reviewing your exact writing… / يراجع المساعد نصك المكتوب الآن…";
+  try{
+   const ctl=new AbortController(),timer=setTimeout(()=>ctl.abort(),35000);let response;
+   try{response=await fetch(endpoint.replace(/\/+$/,"")+"/writing-feedback",{
+    method:"POST",headers:{"Content-Type":"application/json"},signal:ctl.signal,
+    body:JSON.stringify({stage:c.stage,preComplete:c.preComplete,lessonId:id,text:draft.slice(0,1200)})
+   })}finally{clearTimeout(timer)}
+   const json=await response.json();
+   if(!response.ok||!json||!Array.isArray(json.corrections))throw new Error(json.error||"The writing analysis could not be completed");
+   output.innerHTML="";
+   const title=document.createElement("h3");title.textContent="Gemini review / مراجعة Gemini";output.append(title);
+   const preview=document.createElement("div");preview.className="places-draft-preview";
+   renderMarkedText(preview,draft,json.corrections.map(x=>x.original).filter(Boolean));
+   output.append(preview);
+   const list=document.createElement("div");list.className="places-correction-list";
+   if(!json.corrections.length)appendLines(list,"No specific word-level corrections were identified. This does not guarantee perfect accuracy.","لم يتم تحديد أخطاء بعينها في الكلمات، لكن هذا لا يعني أن الكتابة صحيحة تمامًا.");
+   json.corrections.slice(0,8).forEach(item=>{
+    const box=document.createElement("div");box.className="places-correction-item";
+    appendLines(box,"❌ Original: "+String(item.original||"")+" → ✅ Suggested: "+String(item.suggestion||""),String(item.explanationAr||"راجع القاعدة المرتبطة بهذه العبارة."));
+    if(item.explanationEn){const en=document.createElement("p");en.lang="en";en.dir="ltr";en.textContent=String(item.explanationEn);box.append(en)}
+    list.append(box);
+   });
+   output.append(list);
+   if(json.revisedText){const h=document.createElement("h4");h.textContent="Suggested revision / صياغة مقترحة";output.append(h);
+    const v=document.createElement("p");v.lang="en";v.dir="ltr";v.textContent=String(json.revisedText);output.append(v)}
+   appendLines(output,String(json.summaryEn||"Review the suggestions; your original draft remains unchanged."),
+                     String(json.summaryAr||"راجع التصحيحات؛ بقي نصك الأصلي كما كتبته دون تغيير."));
+  }catch(err){
+   const message=err?.name==="AbortError"?"Timeout":String(err?.message||err);
+   output.innerHTML="";
+   appendLines(output,"Inline review unavailable ("+message+"). I have opened the tutor with your exact draft.",
+                     "تعذر عرض التصحيح داخل الدرس، لذلك فتحت المساعد وأرسلت له نصك الفعلي.");
+   window.PLACES_ASK_TUTOR?.("Please correct this learner writing word by word. Quote each wrong word or phrase, the correction, and explain briefly in Arabic and English. Preserve meaning, and show a revised version:\n"+draft.slice(0,1000));
+  }finally{button.disabled=false}
+ };
+
+ $("[data-write-review]",sec).onclick=()=>{
+  const draft=w.value.trim(),sentences=draft.split(/[.!?]+/).map(x=>x.trim()).filter(Boolean);
+  const count=draft.split(/\s+/).filter(Boolean).length;
+  const tests=[
+   {ok:sentences.length>=2,en:"Two complete sentences",ar:"وجود جملتين على الأقل"},
+   {ok:/^[A-Z]/.test(draft),en:"An initial capital letter",ar:"حرف إنجليزي كبير في بداية النص"},
+   {ok:/[.!?]$/.test(draft),en:"Sentence-ending punctuation",ar:"علامة ترقيم في نهاية النص"}
+  ];
+  if(id==="grammar")tests.push({ok:/\b(visited|went|saw|walked|lived|played|was|were|stayed|arrived|took|made|had|travelled|traveled)\b/i.test(draft),
+    en:"A recognizable past verb",ar:"وجود فعل ماضٍ من الأمثلة"});
+  else tests.push({ok:/\b(i think|in my opinion|personally|i believe|beautiful|best|wonderful|crowded|boring|interesting)\b/i.test(draft),
+    en:"An opinion signal or evaluative adjective",ar:"تعبير يدل على الرأي"});
+  const issues=obviousWritingIssues(draft,id);
+  const result=$("[data-write-feedback]",sec);result.innerHTML="";
+  const h=document.createElement("h3");h.textContent=tests.every(x=>x.ok)&&!issues.length?"✅ Visible requirements met / الشروط الظاهرة متحققة":"⚠️ Review your writing / راجع كتابتك";result.append(h);
+  tests.forEach(t=>appendLines(result,(t.ok?"✅ PASS — ":"❌ CHECK — ")+t.en,(t.ok?"✅ متحقق — ":"❌ يحتاج مراجعة — ")+t.ar));
+  const marked=$("[data-writing-marked]",sec);marked.hidden=false;marked.innerHTML="";
+  const heading=document.createElement("h3");heading.textContent="Your exact writing / نصك الأصلي كما كتبته";marked.append(heading);
+  const preview=document.createElement("div");preview.className="places-draft-preview";
+  renderMarkedText(preview,draft,issues.map(x=>x.original));marked.append(preview);
+  if(issues.length){
+   issues.forEach(x=>appendLines(marked,"❌ "+x.original+" → ✅ "+x.suggestion,x.explanationAr));
+  }else appendLines(marked,"No definite word error was detected by the simple rules. This is not proof your writing is fully correct.",
+                             "لم يرصد الفحص البسيط كلمة خاطئة مؤكدة. هذا لا يعني أن الجمل كلها صحيحة؛ اطلب مراجعة Gemini لتحديد الأخطاء بحسب السياق.");
+  const sample=id==="grammar"?"I visited Venice. I saw a canal.":"Vancouver is in Canada. In my opinion, the parks are beautiful.";
+  appendLines(result,"Model example (not a replacement for your answer): "+sample,
+                     "مثال نموذجي للمقارنة وليس بديلًا عن جملتك. يمكنك تعديل الكلمات بنفسك في المربع أعلاه.");
+  appendLines(result,"For detailed grammar and word-level feedback press Ask AI for writing feedback.",
+                     "لتصحيح الكلمة الخطأ بناءً على معنى جملتك، اضغط مراجعة الكتابة بالذكاء الاصطناعي.");
+ };
+
  return sec;
 }
 function enrichLesson(){
@@ -268,5 +363,10 @@ window.addEventListener("places:render",()=>{
 window.addEventListener("places:render",run);
 window.addEventListener("pageshow",run);
 run();
+window.PLACES_WRITING_CONTEXT=()=>{
+ const c=contexts(),ta=$(".shell .panel [data-writing]");
+ if(c.stage!=="lesson"||!ta)return null;
+ return {lessonId:c.lessonId,text:ta.value.trim()};
+};
 window.PLACES_PRACTICE_TOOLS={reset:()=>{saved={};try{localStorage.removeItem(K)}catch{}}};
 })();
