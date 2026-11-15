@@ -185,8 +185,8 @@ function mount(lesson){
  if(!anchor)return;
  const root=document.createElement("section");root.className="task places-voice-studio";
  root.innerHTML='<h2>🎙️ Speaking recordings / تسجيلات العرض</h2>'+
- '<p lang="en" dir="ltr">Record each presentation part, listen and retry. Then play your recordings in order. At the end, make one uninterrupted full recording for optional AI feedback.</p>'+
- '<p lang="ar" dir="rtl">سجّل كل جزء من العرض بمفرده، واستمع إليه وأعده إن رغبت. ثم شغّل الأجزاء بالتتابع. في النهاية يمكنك تسجيل العرض كاملًا للحصول على تغذية راجعة اختيارية.</p>'+
+ '<p lang="en" dir="ltr">Record each part, replay it, then listen to the five parts in order. AI feedback unlocks after all five parts OR one uninterrupted full presentation recording.</p>'+
+ '<p lang="ar" dir="rtl">سجّل أجزاء العرض منفصلة واستمع لها بالتتابع. يتفعّل تقييم Gemini بعد تسجيل الأجزاء الخمسة كلها، أو بعد تسجيل عرض كامل متصل. ويعطي التسجيل الكامل معلومات أفضل عن سلاسة الانتقال بين الأجزاء.</p>'+
  '<div data-part-recorders></div>'+
  '<div class="places-controls"><button class="btn" type="button" data-play-parts>▶ Play all recorded parts / استمع لجميع الأجزاء</button>'+
  '<button class="btn secondary" type="button" data-stop-play>■ Stop / إيقاف</button></div>'+
