@@ -52,8 +52,8 @@ const guide={
  },
  final:{
   title:"Final speaking task / مهمة العرض النهائية",
-  en:"Prepare five clear parts: introduction, facts, positive opinion, negative opinion and conclusion. The introduction names the place, facts are verifiable, opinions give judgments with reasons, and the conclusion wraps up. Use short sentences, listen at a slow speed and record yourself to practise.",
-  ar:"حضّر عرضك في خمسة أجزاء: ١- المقدمة: تعريف المكان وموقعه. ٢- الحقائق: معلومات يمكن التحقق منها. ٣- الرأي الإيجابي: ميزة تعجبك مع سبب. ٤- الرأي السلبي: عيب محتمل مع سبب. ٥- الخاتمة: تلخيص وتوصية أو رسالة أخيرة. اكتب جملًا قصيرة، واستمع إليها ببطء، ثم سجّل صوتك لتراجع أداءك.",
+  en:"Prepare five clear parts: introduction, facts, positive opinion, negative opinion and conclusion. The introduction names the place, facts are verifiable, opinions give judgments with reasons, and the conclusion wraps up. Listen to the example at a comfortable speed, record each section, and practise your full presentation. You do not need to type a script.",
+  ar:"حضّر عرضك في خمسة أجزاء: ١- المقدمة: تعريف المكان وموقعه. ٢- الحقائق: معلومات يمكن التحقق منها. ٣- الرأي الإيجابي: ميزة تعجبك مع سبب. ٤- الرأي السلبي: عيب محتمل مع سبب. ٥- الخاتمة: تلخيص وتوصية أو رسالة أخيرة. استمع إلى النموذج بسرعة مريحة، ثم سجّل كل جزء وتدرّب على عرضك كاملًا. لا تحتاج إلى كتابة جمل في مربعات نصية.",
   example:"Introduction → Facts → Positive opinion → Negative opinion → Conclusion."
  }
 };
