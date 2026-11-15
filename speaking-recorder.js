@@ -151,7 +151,7 @@ async function feedback(lesson,studio){
  message(output,"Gemini is examining the actual recorded audio…","يقوم Gemini بتحليل تسجيلك الصوتي الحقيقي…");
  try{
   const encoded=await Promise.all(clips.map(base64));
-  const reference=lesson==="final"?$$("[data-stage]",studio.closest(".shell .panel")||document).map(e=>e.value.trim()).filter(Boolean).join(" "):P.map(x=>x[3]).join(" ");
+  const reference=lesson==="final"?"":P.map(x=>x[3]).join(" ");
   const input={stage:c.stage,preComplete:c.preComplete,lessonId:lesson,referenceScript:reference.slice(0,1200)};
   const entry=(blob,i)=>({mimeType:(blob.type||"audio/webm").split(";")[0],data:encoded[i]});
   if(segmented)input.audioParts=P.map((part,i)=>({part:part[0],audio:entry(clips[i],i)}));
@@ -206,7 +206,7 @@ function mount(lesson){
   const en=document.createElement("h3");en.lang="en";en.dir="ltr";en.textContent=(i+1)+". "+item[1];
   const ar=document.createElement("p");ar.lang="ar";ar.dir="rtl";ar.textContent=item[2];
   const txt=document.createElement("p");txt.lang="en";txt.dir="ltr";txt.className="places-sample-speech";
-  txt.textContent=lesson==="final"?($('[data-stage="'+item[0]+'"]',panel)?.value.trim()||item[3]):item[3];
+  txt.textContent=item[3];
   box.append(en,ar,txt);list.append(box);setupRecorder(box,lesson,item[0]);
  }
  setupRecorder($("[data-full-recorder]",root),lesson,"full");
