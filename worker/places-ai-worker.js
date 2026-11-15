@@ -68,7 +68,7 @@ export default {
      "Access-Control-Allow-Headers":"Content-Type","Vary":"Origin"}});
    if(req.method!=="POST")return reply({error:"Method not allowed"},405,ORIGIN);
    const path=new URL(req.url).pathname;
-   if(path!=="/chat"&&path!=="/speaking-feedback")return reply({error:"Not found"},404,ORIGIN);
+   if(!["/chat","/speaking-feedback","/writing-feedback"].includes(path))return reply({error:"Not found"},404,ORIGIN);
    if(!env.GEMINI_API_KEY)return reply({error:"AI secret is not configured"},503,ORIGIN);
    let body;try{
      const raw=await req.text();
@@ -76,18 +76,68 @@ export default {
      body=JSON.parse(raw);
    }catch{return reply({error:"Invalid request"},400,ORIGIN)}
    if(!body||typeof body!=="object")return reply({error:"Invalid data"},400,ORIGIN);
+   if(path==="/writing-feedback"){
+     if(body.stage!=="lesson"||body.preComplete!==true)return reply({error:"Writing feedback is available only in lessons after the diagnostic."},403,ORIGIN);
+     if(!["grammar","vancouver","critical"].includes(body.lessonId))return reply({error:"Writing Workshop is unavailable in this module."},400,ORIGIN);
+     const draft=shorten(body.text,1200);
+     if(draft.length<8)return reply({error:"Write a sentence before asking for feedback."},400,ORIGIN);
+     const instruction=[
+       "You are a careful English writing tutor for preparatory university students. This is a short formative writing exercise, NOT a scored exam.",
+       "The learner's original text is provided below. Preserve their meaning; never silently replace their original answer.",
+       "Find up to 8 concrete, evidenced word/phrase errors (grammar, word form, missing function word or usage). Each correction's ORIGINAL text must appear VERBATIM in the student draft. If the issue is an omission, reference the shortest exact nearby original phrase.",
+       "Do not invent mistakes. Distinguish a definite grammar error from an optional stylistic improvement in the explanations.",
+       "Respond ONLY as valid JSON with fields: corrections (array of objects: original, suggestion, explanationAr, explanationEn), revisedText (a complete corrected English version), summaryAr, summaryEn.",
+       "Keep explanations simple and bilingual; do not produce a fabricated grade. A plain grammar checker cannot verify all factual claims.",
+       "If the writing is grammatically acceptable, return an empty corrections array and mention optional refinements as suggestions.",
+       "Module: "+body.lessonId,
+       "LEARNER'S EXACT TEXT:\n"+draft
+     ].join("\n");
+     try{
+       const api="https://generativelanguage.googleapis.com/v1beta/models/"+MODEL+":generateContent";
+       const resp=await fetch(api,{method:"POST",headers:{"Content-Type":"application/json","x-goog-api-key":env.GEMINI_API_KEY},
+         body:JSON.stringify({contents:[{role:"user",parts:[{text:instruction}]}],
+           generationConfig:{temperature:0.15,maxOutputTokens:1600,responseMimeType:"application/json"}})
+       });
+       if(!resp.ok){
+         const e=resp.status===429?"Gemini free quota reached":resp.status===404?"Model unavailable for writing analysis":"Gemini writing request failed ("+resp.status+")";
+         return reply({error:e},resp.status===429?429:502,ORIGIN);
+       }
+       const generated=await resp.json();
+       const raw=(generated.candidates?.[0]?.content?.parts||[]).map(p=>p.text||"").join("").trim();
+       let parsed;try{parsed=JSON.parse(raw)}catch{return reply({error:"Gemini returned an unparseable writing review"},502,ORIGIN)}
+       const entries=Array.isArray(parsed.corrections)?parsed.corrections:[];
+       const corrections=entries.slice(0,8).filter(item=>item&&typeof item==="object")
+         .map(item=>({
+           original:shorten(item.original,100),suggestion:shorten(item.suggestion,130),
+           explanationAr:shorten(item.explanationAr,450),explanationEn:shorten(item.explanationEn,450)
+         }))
+         .filter(item=>item.original&&draft.toLocaleLowerCase().includes(item.original.toLocaleLowerCase()));
+       return reply({corrections,revisedText:shorten(parsed.revisedText,1700),
+        summaryAr:shorten(parsed.summaryAr,500),summaryEn:shorten(parsed.summaryEn,500),
+        model:MODEL,kind:"formative-writing-review"},200,ORIGIN);
+     }catch{
+       return reply({error:"Could not contact Gemini for writing feedback"},502,ORIGIN);
+     }
+   }
+
    if(path==="/speaking-feedback"){
      if(body.stage!=="lesson"||body.preComplete!==true)return reply({error:"Speaking feedback is available only after the diagnostic, during lessons."},403,ORIGIN);
      if(body.lessonId!=="speaking"&&body.lessonId!=="final")return reply({error:"Choose Module 7 or 8"},400,ORIGIN);
-     const audio=body.audio;
      const types=["audio/webm","audio/mp4","audio/m4a","audio/ogg","audio/wav","audio/mpeg"];
-     if(!audio||typeof audio!=="object"||!types.includes(audio.mimeType)||typeof audio.data!=="string"||audio.data.length<150||audio.data.length>3400000||!/^[A-Za-z0-9+/]+={0,2}$/.test(audio.data)){
-       return reply({error:"Invalid audio. Record 60–90 seconds and try again (max 2.5 MB)."},400,ORIGIN);
+     const validClip=a=>a&&typeof a==="object"&&types.includes(a.mimeType)&&typeof a.data==="string"&&a.data.length>=150&&a.data.length<=3400000&&/^[A-Za-z0-9+/]+={0,2}$/.test(a.data);
+     const order=["intro","fact","opinion","negative","end"];
+     const segmented=Array.isArray(body.audioParts);
+     const clips=segmented?body.audioParts.map(x=>x?.audio):[body.audio];
+     const totalSize=clips.reduce((sum,x)=>sum+(typeof x?.data==="string"?x.data.length:0),0);
+     if(segmented&&(!Array.isArray(body.audioParts)||body.audioParts.length!==5||body.audioParts.some((p,i)=>p?.part!==order[i]))){
+       return reply({error:"Please record all five presentation sections in order."},400,ORIGIN);
      }
+     if(!clips.every(validClip)||totalSize>3400000)return reply({error:"Recorded audio too large or unsupported. Try shorter recordings."},400,ORIGIN);
      const script=shorten(body.referenceScript,1200);
      const speechPrompt=[
        "You are an encouraging but precise English-speaking coach for preparatory university learners, listening to the student's ACTUAL attached audio recording of a short presentation about a place.",
        "This is formative feedback. It is NOT a validated pronunciation test and you MUST NOT invent a numerical grade, CEFR level, native accent classification, or exact phoneme measurement.",
+       segmented?"The student supplied FIVE separately recorded audio segments (introduction, facts, positive opinion, negative opinion, conclusion). Analyze each and the sequence; do not claim to assess continuous delivery, transitions or full-take fluency.":"The learner supplied ONE continuous presentation recording. Consider its overall flow only if audible.",
        "If the audio is silent, unintelligible or too short, say clearly what cannot be assessed. Do not claim to have heard nonexistent speech.",
        "Assess only aspects supported by audible evidence: organization (introduction, facts, positive and negative opinions, conclusion), clarity of understandable English, pacing and pauses, and grammatical errors if you can accurately hear the words.",
        "When useful and possible, give one short example of a phrase heard and an improved alternative. Do not invent transcript words or use the written reference script as proof of what was spoken.",
@@ -101,7 +151,11 @@ export default {
        const api="https://generativelanguage.googleapis.com/v1beta/models/"+MODEL+":generateContent";
        const response=await fetch(api,{method:"POST",headers:{"Content-Type":"application/json","x-goog-api-key":env.GEMINI_API_KEY},
          body:JSON.stringify({
-           contents:[{role:"user",parts:[{text:speechPrompt},{inlineData:{mimeType:audio.mimeType,data:audio.data}}]}],
+           contents:[{role:"user",parts:[{text:speechPrompt},
+             ...clips.flatMap((clip,i)=>[
+               {text:segmented?"Section "+(i+1)+" — "+order[i]+".": "Continuous full presentation audio:"},
+               {inlineData:{mimeType:clip.mimeType,data:clip.data}}
+             ])]}],
            generationConfig:{temperature:0.25,maxOutputTokens:1050}
          })
        });
@@ -112,7 +166,7 @@ export default {
        const result=await response.json();
        const feedback=(result.candidates?.[0]?.content?.parts||[]).map(p=>p.text||"").join("").trim();
        if(!feedback)return reply({error:"Gemini returned no audio feedback. Check the recording."},502,ORIGIN);
-       return reply({feedback:feedback.slice(0,4800),model:MODEL},200,ORIGIN);
+       return reply({feedback:feedback.slice(0,4800),model:MODEL,mode:segmented?"five-parts":"full-take"},200,ORIGIN);
      }catch{
        return reply({error:"Unable to contact Gemini for audio feedback"},502,ORIGIN);
      }
