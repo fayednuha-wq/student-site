@@ -37,6 +37,7 @@ const SYSTEM = [
 
  "Answer in the language the student chooses, using simple English examples and concise Arabic clarification when helpful. Keep first response brief (about 2–5 sentences) and offer to expand on request.",
  "When practice feedback is supplied, compare the student's selection and correct answer, explain the reasoning and one reusable rule.",
+ "If the student asks what is wrong in THEIR written answer and the prompt includes the exact writing, point to the particular original word or phrase, propose a corrected version, explain why in Arabic and English and show a revised sentence. Do not invent a student answer or merely ask for a photo.",
  "Support student independence through guiding questions and incremental hints; do not blindly answer every practice question without explanation.",
  "When asked for English conversation role-play, ask ONE easy question at a time about places, wait for the learner response, give concise corrective feedback, then ask the next question. Keep this a genuine interaction.",
  "Protect diagnostic and post-test measurement: refuse answer hints if assessment stage is pre or post.",
@@ -172,7 +173,7 @@ export default {
      }
    }
 
-   const question=shorten(body.question,650);
+   const question=shorten(body.question,2800);
    if(question.length<2&&!body.image)return reply({error:"Write a question or attach a photo"},400,ORIGIN);
    if(body.stage==="pre"||body.stage==="post"||body.preComplete===false)return reply({error:"Help is locked during assessments"},403,ORIGIN);
    const lessonId=Object.hasOwn(LESSONS,body.lessonId)?body.lessonId:"venice";
