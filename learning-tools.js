@@ -151,47 +151,33 @@ end:["To conclude,","Thank you for listening."]
 let recorder=null,stream=null,chunks=[],blobURL=null,startStamp=0,stopClock=null;
 const saveDraft=(id,txt)=>{saved[id]=txt;persist()};
 function speakStudio(){
- const sec=document.createElement("section");sec.className="task places-practice-lab places-speaking-builder";
+ const sec=document.createElement("section");
+ sec.className="task places-practice-lab places-speaking-builder";
  const parts=[
-  {key:"intro",en:"Introduction — name the place and tell us where it is.",ar:"المقدمة — عرّف المكان واذكر موقعه.",placeholder:"Today I will talk about Venice. It is in Italy."},
-  {key:"fact",en:"Facts — share checkable information about the place.",ar:"الحقائق — قدّم معلومات يمكن التحقق منها عن المكان.",placeholder:"Venice has many canals and bridges."},
-  {key:"opinion",en:"Positive opinion — state something good and explain why.",ar:"الرأي الإيجابي — اذكر ميزة في المكان وعلّل إعجابك بها.",placeholder:"In my opinion, Venice is beautiful because of the canals."},
-  {key:"negative",en:"Negative opinion — describe one drawback and why.",ar:"الرأي السلبي — اذكر عيبًا محتملًا مع السبب.",placeholder:"However, Venice can be crowded because many tourists visit."},
-  {key:"end",en:"Conclusion — summarize and give a final recommendation.",ar:"الخاتمة — لخّص أفكارك وقدّم توصية أو رسالة أخيرة.",placeholder:"To conclude, I recommend visiting Venice. Thank you for listening."}
+  {en:"Introduction — name the place and tell us where it is.",ar:"المقدمة — عرّف المكان واذكر موقعه.",example:"Today I will introduce Venice. It is in Italy."},
+  {en:"Facts — share checkable information about the place.",ar:"الحقائق — قدّم معلومات يمكن التحقق منها عن المكان.",example:"Venice has many canals and bridges."},
+  {en:"Positive opinion — state something good and explain why.",ar:"الرأي الإيجابي — اذكر ميزة في المكان وعلّل إعجابك بها.",example:"In my opinion, Venice is beautiful because of its canals."},
+  {en:"Negative opinion — describe one drawback and why.",ar:"الرأي السلبي — اذكر عيبًا محتملًا مع السبب.",example:"However, it can be crowded because many tourists visit."},
+  {en:"Conclusion — summarize and give a final recommendation.",ar:"الخاتمة — لخّص أفكارك وقدّم توصية أو رسالة أخيرة.",example:"To conclude, I recommend visiting Venice. Thank you for listening."}
  ];
- sec.innerHTML='<h2>🎤 Guided Speaking & Presentation Studio</h2>'+
- '<p lang="en" dir="ltr">Plan five short parts, then listen, practise and record each one. You can also record your complete presentation in the microphone studio.</p>'+
- '<p lang="ar" dir="rtl">خطط لخمسة أجزاء قصيرة ثم استمع إلى كل جزء، وتدرّب عليه، وسجّل صوتك. يمكنك أيضًا تسجيل العرض كاملًا في استوديو الصوت.</p>'+
+ sec.innerHTML='<h2>🎤 Speaking & Presentation Guide / دليل العرض الشفهي</h2>'+
+ '<p lang="en" dir="ltr">Learn the five presentation parts, listen to an example at your preferred speed, and practise speaking in the recording studio below. No writing is required.</p>'+
+ '<p lang="ar" dir="rtl">تعرّف على أجزاء العرض الخمسة واستمع إلى نموذج بسرعة تناسبك، ثم تدرّب شفهيًا في استوديو التسجيل أسفل الشرح. لا يُطلب منك كتابة جمل.</p>'+
  '<div class="places-presentation-guide"><h3>Presentation parts / أجزاء العرض</h3>'+
- parts.map((p,i)=>'<div class="places-presentation-part"><strong lang="en" dir="ltr">'+(i+1)+'. '+esc(p.en)+'</strong><p lang="ar" dir="rtl">'+esc(p.ar)+'</p></div>').join("")+'</div>'+
- '<div class="places-speaking-fields">'+parts.map((p,i)=>
-  '<div class="places-speaking-part" data-part="'+esc(p.key)+'">'+
-  '<label class="places-writing-field" for="sp-'+esc(p.key)+'"><span lang="en" dir="ltr">'+(i+1)+'. '+esc(p.en)+'</span><span lang="ar" dir="rtl">'+esc(p.ar)+'</span></label>'+
-  '<textarea id="sp-'+esc(p.key)+'" class="places-speaking-draft" data-stage="'+esc(p.key)+'" rows="2" placeholder="'+esc(p.placeholder)+'">'+esc(saved["final-"+p.key]||"")+'</textarea>'+
-  '</div>').join("")+'</div>'+
- '<div class="places-controls"><label class="places-speed-label">Playback speed <select data-presentation-speed><option value=".62">Extra slow 0.62×</option><option value=".72" selected>Slow 0.72×</option><option value=".85">Steady 0.85×</option><option value="1">Normal 1×</option></select></label>'+
- '<button class="btn" type="button" data-builder-listen>🔊 Listen to my script</button>'+
- '<button class="btn secondary" type="button" data-builder-check>✓ Check five parts / فحص الأجزاء</button></div>'+
- '<div class="places-bilingual-feedback" role="status" data-builder-feedback>'+
- '<p lang="en">Use the five parts to organize your spoken presentation.</p><p lang="ar" dir="rtl">اكتب جملة أو جملتين لكل جزء لتنظيم عرضك الشفهي.</p></div>'+
- '<fieldset class="places-rubric"><legend>Self reflection / تقييم ذاتي</legend>'+
+ parts.map((p,i)=>'<div class="places-presentation-part">'+
+   '<strong lang="en" dir="ltr">'+(i+1)+'. '+esc(p.en)+'</strong>'+
+   '<p lang="ar" dir="rtl">'+esc(p.ar)+'</p>'+
+   '</div>').join("")+'</div>'+
+ '<div class="places-controls"><label class="places-speed-label">Playback speed <select data-presentation-speed>'+
+ '<option value=".62">Extra slow 0.62×</option><option value=".72" selected>Slow 0.72×</option>'+
+ '<option value=".85">Steady 0.85×</option><option value="1">Normal 1×</option></select></label>'+
+ '<button class="btn" type="button" data-builder-listen>🔊 Listen to example / استمع للنموذج</button></div>'+
+ '<fieldset class="places-rubric"><legend>Speaking self reflection / تقييم ذاتي للعرض</legend>'+
  '<label><input type="checkbox"> I introduced the place clearly.</label>'+
  '<label><input type="checkbox"> I gave at least one verifiable fact.</label>'+
  '<label><input type="checkbox"> I explained positive and negative opinions.</label>'+
  '<label><input type="checkbox"> I concluded clearly.</label></fieldset>';
- $all("[data-stage]",sec).forEach(t=>t.oninput=()=>saveDraft("final-"+t.dataset.stage,t.value));
- const getLines=()=>$all("[data-stage]",sec).map(t=>t.value.trim()).filter(Boolean);
- $("[data-builder-listen]",sec).onclick=()=>{
-  const lines=getLines();
-  if(!lines.length){$("[data-builder-feedback]",sec).textContent="Write a sentence first. / اكتب جملة أولًا.";return}
-  say(lines.join(" ... "),"en-US",Number($("[data-presentation-speed]",sec).value));
- };
- $("[data-builder-check]",sec).onclick=()=>{
-  const fields=$all("[data-stage]",sec),filled=fields.filter(t=>t.value.trim()).length;
-  const msg=$("[data-builder-feedback]",sec);
-  msg.innerHTML='<p lang="en" dir="ltr">'+(filled===5?"✓ All five parts have a draft. Now rehearse aloud.":"You filled "+filled+" of 5 parts. Please finish the missing sections.")+'</p>'+
-  '<p lang="ar" dir="rtl">'+(filled===5?"✅ كتبت مسودات الأجزاء الخمسة. الآن تدرّب على الإلقاء.":"أكملت "+filled+" من خمسة أجزاء. أكمل الأجزاء الناقصة قبل التسجيل الكامل.")+'</p>';
- };
+ $("[data-builder-listen]",sec).onclick=()=>say(parts.map(p=>p.example).join(" ... "),"en-US",Number($("[data-presentation-speed]",sec).value));
  return sec;
 }
 function appendLines(container,en,ar){
